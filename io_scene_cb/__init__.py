@@ -53,7 +53,7 @@ def load_sound_emitters():
     game_path = Path(bpy.context.preferences.addons[__package__].preferences.game_path)
 
     rooms_ini = None
-    rooms_ini_path = os.path.join(game_path, r"Data\rooms.ini")
+    rooms_ini_path = os.path.join(game_path, "Data", "rooms.ini")
     if os.path.isfile(rooms_ini_path):
         rooms_ini = configparser.ConfigParser()
         rooms_ini.read(rooms_ini_path)
@@ -64,7 +64,7 @@ def load_sound_emitters():
             if len(result) > 0:
                 result = result[0].lower()
 
-            enum_items_cache.append((str(key_idx + 1), result, result))
+            enum_items_cache.append((str(key_idx), result, result))
 
     if len(enum_items_cache) == 0:
         enum_items_cache = [("0", "None", "")]
@@ -842,6 +842,12 @@ class ExportX(Operator, ExportHelper):
     bl_label = 'Export X'
     filename_ext = '.x'
 
+    use_game_rules: BoolProperty(
+        name ="Use Game Rules",
+        description = "Match how the mesh is scaled ingame",
+        default = True,
+        )
+
     filter_glob: StringProperty(
         default="*.x",
         options={'HIDDEN'},
@@ -850,13 +856,19 @@ class ExportX(Operator, ExportHelper):
     def execute(self, context):
         from . import scene_x
 
-        return scene_x.export_scene(context, Path(self.filepath), self.report)
+        return scene_x.export_scene(context, Path(self.filepath), self.use_game_rules, self.report)
 
 class ImportX(Operator, ImportHelper):
     """Import an X file"""
     bl_idname = "import_scene.ix"
     bl_label = "Import X"
     filename_ext = '.x'
+
+    use_game_rules: BoolProperty(
+        name ="Use Game Rules",
+        description = "Match how the mesh is scaled ingame",
+        default = True,
+        )
 
     filter_glob: StringProperty(
         default="*.x",
@@ -871,7 +883,7 @@ class ImportX(Operator, ImportHelper):
     def execute(self, context):
         from . import scene_x
 
-        return scene_x.import_scene(context, Path(self.filepath), self.report)
+        return scene_x.import_scene(context, Path(self.filepath), self.use_game_rules, self.report)
 
     if (4, 1, 0) <= bpy.app.version:
         def invoke(self, context, event):
@@ -886,6 +898,18 @@ class ExportB3D(Operator, ExportHelper):
     bl_label = 'Export B3D'
     filename_ext = '.b3d'
 
+    use_game_rules: BoolProperty(
+        name ="Use Game Rules",
+        description = "Match how the mesh is scaled ingame",
+        default = True,
+        )
+
+    rot_modifier: BoolProperty(
+        name="Rotation Modifier",
+        description="Fixes the axis difference between Blender and the game so that bones line up.",
+        default = True,
+        )
+
     filter_glob: StringProperty(
         default="*.b3d",
         options={'HIDDEN'},
@@ -894,7 +918,7 @@ class ExportB3D(Operator, ExportHelper):
     def execute(self, context):
         from . import scene_b3d
 
-        return scene_b3d.export_scene(context, Path(self.filepath), self.report)
+        return scene_b3d.export_scene(context, Path(self.filepath), self.use_game_rules, self.rot_modifier, self.report)
 
 class ImportB3D(Operator, ImportHelper):
     """Import a B3D file"""
@@ -914,6 +938,18 @@ class ImportB3D(Operator, ImportHelper):
         default = True,
         )
 
+    use_game_rules: BoolProperty(
+        name ="Use Game Rules",
+        description = "Match how the mesh is scaled ingame",
+        default = True,
+        )
+
+    rot_modifier: BoolProperty(
+        name="Rotation Modifier",
+        description="Fixes the axis difference between Blender and the game so that bones line up.",
+        default = True,
+        )
+
     filter_glob: StringProperty(
         default="*.b3d",
         options={'HIDDEN'},
@@ -927,7 +963,7 @@ class ImportB3D(Operator, ImportHelper):
     def execute(self, context):
         from . import scene_b3d
 
-        return scene_b3d.import_scene(context, Path(self.filepath), self.fullbright_materials, self.use_light_radius, self.report)
+        return scene_b3d.import_scene(context, Path(self.filepath), self.fullbright_materials, self.use_light_radius, self.rot_modifier, self.use_game_rules, self.report)
 
     if (4, 1, 0) <= bpy.app.version:
         def invoke(self, context, event):

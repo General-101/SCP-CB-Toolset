@@ -43,10 +43,10 @@ def update_object(context, report):
             bm = bmesh.new()
             is_simple=True
             if model_path.lower().endswith(".b3d"):
-                import_b3d(context, Path(model_path), True, True, report, bm, ob.data, is_simple)
+                import_b3d(context, Path(model_path), True, True, "0", True, report, bm, ob.data, is_simple)
 
             else:
-                import_x(context, Path(model_path), report, bm, ob.data, is_simple)
+                import_x(context, Path(model_path), True, report, bm, ob.data, is_simple)
 
             bm.to_mesh(ob.data)
             bm.free()
@@ -57,7 +57,7 @@ def update_object(context, report):
     elif ob_type == ObjectType.entity_item:
         game_path = Path(bpy.context.preferences.addons[__package__].preferences.game_path)
 
-        items_ini_path = os.path.join(game_path, r"Data\items.ini")
+        items_ini_path = os.path.join(game_path, "Data", "items.ini")
         if os.path.isfile(items_ini_path):
             items_ini = configparser.ConfigParser()
             items_ini.read(items_ini_path)
@@ -84,10 +84,10 @@ def update_object(context, report):
                     bm = bmesh.new()
                     is_simple=True
                     if model_path.lower().endswith(".b3d"):
-                        import_b3d(context, Path(model_path), True, True, report, bm, ob.data, is_simple)
+                        import_b3d(context, Path(model_path), True, True, "0", True, report, bm, ob.data, is_simple)
 
                     else:
-                        import_x(context, Path(model_path), report, bm, ob.data, is_simple)
+                        import_x(context, Path(model_path), True, report, bm, ob.data, is_simple)
 
                     bm.to_mesh(ob.data)
                     bm.free()
@@ -642,14 +642,13 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
             x, y, z = rot.to_euler()
             entity_dict = {}
 
-            button_scale = Vector((7.68, 7.68, 7.68))
             door_type = DoorType(int(ob.cb.door_type))
             if door_type == DoorType.big:
-                ob_a_matrix = Matrix.LocRotScale((1.0 / room_scale) * Vector((432, -192, 179.2)), Euler((0, 0, radians(-90))), button_scale)
-                ob_b_matrix = Matrix.LocRotScale((1.0 / room_scale) * Vector((-432, 192, 179.2)), Euler((0, 0, radians(90))), button_scale)
+                ob_a_matrix = Matrix.LocRotScale(room_scale * Vector((432, -192, 179.2)), Euler((0, 0, radians(-90))), Vector((1, 1, 1)))
+                ob_b_matrix = Matrix.LocRotScale(room_scale * Vector((-432, 192, 179.2)), Euler((0, 0, radians(90))), Vector((1, 1, 1)))
             else:
-                ob_a_matrix = Matrix.LocRotScale((1.0 / room_scale) * Vector((153.6, -25.6, 179.2)), Euler((0, 0, 0)), button_scale)
-                ob_b_matrix = Matrix.LocRotScale((1.0 / room_scale) * Vector((-153.6, 25.6, 179.2)), Euler((0, 0, radians(180))), button_scale)
+                ob_a_matrix = Matrix.LocRotScale(room_scale * Vector((153.6, -25.6, 179.2)), Euler((0, 0, 0)), Vector((1, 1, 1)))
+                ob_b_matrix = Matrix.LocRotScale(room_scale * Vector((-153.6, 25.6, 179.2)), Euler((0, 0, radians(180))), Vector((1, 1, 1)))
 
             button_1_position = (0, 0, 0)
             button_1_angle = (0, 0, 0)
@@ -902,11 +901,11 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
     error_log = set()
 
     local_asset_path = ""
-    local_prop_path = r"GFX\map\Props"
-    local_screen_path = r"GFX\screens"
+    local_prop_path = os.path.join("GFX", "map", "Props")
+    local_screen_path = os.path.join("GFX", "screens")
     if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2:
-        local_prop_path = r"GFX\Map\Props"
-        local_screen_path = r"GFX\Map\Screens"
+        local_prop_path = os.path.join("GFX", "Map", "Props")
+        local_screen_path = os.path.join("GFX", "Map", "Screens")
 
     if not is_string_empty(str(game_path)) and str(filepath).startswith(str(game_path)):
         local_asset_path = os.path.dirname(os.path.relpath(str(filepath), str(game_path)))
@@ -1027,7 +1026,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     trigger_box_collection.objects.link(trigger_mesh_object_mesh)
 
     items_ini = None
-    items_ini_path = os.path.join(game_path, r"Data\items.ini")
+    items_ini_path = os.path.join(game_path, "Data", "items.ini")
     if os.path.isfile(items_ini_path):
         items_ini = configparser.ConfigParser()
         items_ini.read(items_ini_path)
@@ -1220,10 +1219,10 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     bm = bmesh.new()
                     is_simple=True
                     if model_path.lower().endswith(".b3d"):
-                        import_b3d(context, Path(model_path), fullbright_materials, use_light_radius, report, bm, ob_data, is_simple, error_log, random_color_gen)
+                        import_b3d(context, Path(model_path), fullbright_materials, use_light_radius, "0", True, report, bm, ob_data, is_simple, error_log, random_color_gen)
 
                     else:
-                        import_x(context, Path(model_path), report, bm, ob_data, is_simple, error_log, random_color_gen)
+                        import_x(context, Path(model_path), True, report, bm, ob_data, is_simple, error_log, random_color_gen)
 
                     bm.to_mesh(ob_data)
                     bm.free()
@@ -1273,16 +1272,15 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     if item_entry:
                         model_path = get_file(item_entry, False)
                         ob_data = entity_meshes.get(model_path)
-                        model_scale = (1.0 / room_scale) * float(items_ini.get(model_name, "scale", fallback=0.01))
                         if ob_data is None and model_path:
                             ob_data = entity_meshes[model_path] = bpy.data.meshes.new("%s mesh" % entity_idx)
                             bm = bmesh.new()
                             is_simple=True
                             if model_path.lower().endswith(".b3d"):
-                                import_b3d(context, Path(model_path), fullbright_materials, use_light_radius, report, bm, ob_data, is_simple, error_log, random_color_gen)
+                                import_b3d(context, Path(model_path), fullbright_materials, use_light_radius, "0", True, report, bm, ob_data, is_simple, error_log, random_color_gen)
 
                             else:
-                                import_x(context, Path(model_path), report, bm, ob_data, is_simple, error_log, random_color_gen)
+                                import_x(context, Path(model_path), True, report, bm, ob_data, is_simple, error_log, random_color_gen)
 
                             bm.to_mesh(ob_data)
                             bm.free()
@@ -1298,8 +1296,10 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 rot = get_blender_rot(entity_dict["euler_rotation"])
                 scl = Vector((model_scale, model_scale, model_scale))
                 object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
-
-                object_mesh.cb.item_name = entity_dict["item_name"]
+                if file_type == ExportFileType.rmesh or file_type == ExportFileType.rmesh_tb:
+                    object_mesh.cb.item_name = entity_dict["item_name"]
+                else:
+                    object_mesh.cb.item_name = entity_dict["model_name"]
                 object_mesh.cb.use_custom_rotation = bool(entity_dict["use_custom_rotation"])
                 object_mesh.cb.state_1 = entity_dict["state_1"]
                 object_mesh.cb.state_2 = entity_dict["state_2"]
@@ -1347,22 +1347,12 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     door_ob.cb.delete_half = door_halved
 
                     loc_result = room_scale * Vector(flip(entity_dict["button_1_position"]))
-                    loc_baw, rot_baw, scl_baw = button_a_ob.matrix_world.decompose()
-                    if not loc_result.length >= MIN_BUTTON_LENGTH:
-                        loc_result = loc_baw
-
                     rot = get_blender_rot(entity_dict["button_1_angle"])
-                    scl = scl_baw
-                    button_a_ob.matrix_world = Matrix.LocRotScale(loc_result, rot, scl)
+                    button_a_ob.matrix_local = button_a_ob.matrix_local @ Matrix.LocRotScale(loc_result, rot, Vector((1, 1, 1)))
 
                     loc_result = room_scale * Vector(flip(entity_dict["button_2_position"]))
-                    loc_bbw, rot_bbw, scl_bbw = button_b_ob.matrix_world.decompose()
-                    if not loc_result.length >= MIN_BUTTON_LENGTH:
-                        loc_result = loc_bbw
-
                     rot = get_blender_rot(entity_dict["button_2_angle"])
-                    scl = scl_bbw
-                    button_b_ob.matrix_world = Matrix.LocRotScale(loc_result, rot, scl)
+                    button_b_ob.matrix_local = button_b_ob.matrix_local @ Matrix.LocRotScale(loc_result, rot, Vector((1, 1, 1)))
 
             else:
                 report({'WARNING'}, "Unknown entity type: %s" % entity_dict["entity_type"])
