@@ -1,5 +1,6 @@
 import os
 import bpy
+import ntpath
 
 from . import ObjectType
 from pathlib import Path
@@ -1506,7 +1507,7 @@ def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_
 
                     mat_blend = MaterialBlendEnum(material_dict["blend"])
 
-                    texture_asset = get_file(os.path.basename(texture['name']), True, True, directory_path=local_asset_path)
+                    texture_asset = get_file(ntpath.basename(texture['name']), True, True, directory_path=local_asset_path)
                     if texture_asset:
                         set_image_properties(texture_asset, texture)
 
@@ -1547,7 +1548,7 @@ def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_
                             mapping_node.inputs["Scale"].default_value = (sx, sy, 1)
                             mapping_node.inputs["Rotation"].default_value = (radians(rx), 0, 0)
 
-                            texture_name = os.path.basename(texture['name']).rsplit(".", 1)[0]
+                            texture_name = ntpath.basename(texture['name']).rsplit(".", 1)[0]
                             texture_bump_data = get_file("%sbump" % texture_name, directory_path=local_asset_path)
                             texture_glow_data = get_file("%sglow" % texture_name, directory_path=local_asset_path)
                             if texture_bump_data:

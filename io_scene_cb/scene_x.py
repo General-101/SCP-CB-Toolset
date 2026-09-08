@@ -1,5 +1,6 @@
 import os
 import bpy
+import ntpath
 
 from pathlib import Path
 from mathutils import Matrix, Vector, Quaternion
@@ -87,7 +88,7 @@ def generate_materials(materials_dict, random_color_gen, mesh, is_simple, ob_dat
             uv_node.uv_map = "uvmap_render"
             mapping_node.vector_type = 'TEXTURE'
 
-            texture_name = os.path.basename(material_dict["texture"]).rsplit(".", 1)[0]
+            texture_name = ntpath.basename(material_dict["texture"]).rsplit(".", 1)[0]
             texture_bump_data = get_file("%sbump" % texture_name, directory_path=local_asset_path)
             texture_glow_data = get_file("%sglow" % texture_name, directory_path=local_asset_path)
             if texture_bump_data:

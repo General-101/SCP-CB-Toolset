@@ -139,7 +139,7 @@ def get_file(file_name, use_image_set=True, generate_image_node=True, directory_
 
     asset_directory = os.path.join(game_path, directory_path)
     if not is_string_empty(asset_directory) and file_name is not None:
-        if not is_string_empty(directory_path):
+        if not is_string_empty(directory_path) and os.path.isdir(asset_directory):
             file_check = os.path.join(asset_directory, file_name)
             if os.path.isfile(file_check):
                 file_path = file_check

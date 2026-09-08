@@ -1,5 +1,6 @@
 import os
 import bpy
+import ntpath
 
 from pathlib import Path
 from .process_smf import read_smf
@@ -56,7 +57,7 @@ def import_mesh(data, node, random_color_gen, local_asset_path, room_scale, mate
         shader_color_input = "Diffuse Map"
         shader_emission_input = "Emission Map"
 
-    texture_asset = get_file(os.path.basename(node['texture_name']), True, True, directory_path=local_asset_path)
+    texture_asset = get_file(ntpath.basename(node['texture_name']), True, True, directory_path=local_asset_path)
     if texture_asset:
         texture_node = material.node_tree.nodes.new('ShaderNodeTexImage')
         texture_node.image = texture_asset
@@ -68,7 +69,7 @@ def import_mesh(data, node, random_color_gen, local_asset_path, room_scale, mate
         uv_node.uv_map = "uvmap_render"
         mapping_node.vector_type = 'TEXTURE'
 
-        texture_name = os.path.basename(node['texture_name']).rsplit(".", 1)[0]
+        texture_name = ntpath.basename(node['texture_name']).rsplit(".", 1)[0]
         texture_bump_data = get_file("%sbump" % texture_name, directory_path=local_asset_path)
         texture_glow_data = get_file("%sglow" % texture_name, directory_path=local_asset_path)
         if texture_bump_data:

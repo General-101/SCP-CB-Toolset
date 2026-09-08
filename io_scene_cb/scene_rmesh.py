@@ -2,6 +2,7 @@ import re
 import os
 import bpy
 import bmesh
+import ntpath
 import configparser
 
 from pathlib import Path
@@ -804,7 +805,7 @@ def generate_mesh_data(mesh_dict, mesh_data, mesh_idx, local_asset_path, random_
                     uv_node.uv_map = "uvmap_render"
                     mapping_node.vector_type = 'TEXTURE'
 
-                    texture_name = os.path.basename(texture_dict["texture_name"]).rsplit(".", 1)[0]
+                    texture_name = ntpath.basename(texture_dict["texture_name"]).rsplit(".", 1)[0]
                     texture_bump_data = get_file("%sbump" % texture_name, directory_path=local_asset_path)
                     texture_glow_data = get_file("%sglow" % texture_name, directory_path=local_asset_path)
                     if texture_bump_data:
