@@ -215,7 +215,8 @@ def x_matrix_to_blender(mat, room_scale):
 
 def blender_matrix_to_x(mat, room_scale):
     loc, rot, scl = mat.decompose()
-    b_matrix = Matrix.LocRotScale((1.0 / room_scale) * Vector(flip(loc)), Quaternion(flip(rot)).inverted(), Vector(flip(scl))).transposed()
+    rst, rsr, rss = room_scale.decompose()
+    b_matrix = Matrix.LocRotScale(rss * Vector(flip(loc)), Quaternion(flip(rot)).inverted(), Vector(flip(scl))).transposed()
     matrix_array = []
     for row in b_matrix:
         for element in row:
@@ -286,6 +287,7 @@ def get_skeleton_tree(active_ob, frame_dict, bone_transforms, rigid_ob_dict, dep
             frame_dict.append(bone_dict)
 
 def process_mesh(ob_dict, bone_transforms, armature, ob, depsgraph, room_scale, bone=None):
+    rst, rsr, rss = room_scale.decompose()
     ob_eval = ob.evaluated_get(depsgraph)
     mesh = ob_eval.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
     mesh.calc_loop_triangles()
@@ -333,7 +335,7 @@ def process_mesh(ob_dict, bone_transforms, armature, ob, depsgraph, room_scale, 
             v = mesh.vertices[loop.vertex_index]
             loop_normal = flip(loop.normal)
 
-            pos = (1.0 / room_scale) * Vector(flip(v.co))
+            pos = rss * Vector(flip(v.co))
 
             uv = (0.0, 0.0)
             if uv_layer:
