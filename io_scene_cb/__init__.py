@@ -5,6 +5,7 @@ bl_info = {
     "blender": (4, 0, 0),
     "location": "File > Import-Export",
     "description": "Import-Export SCP CB and UER game assets Build: BUILD_VERSION_STR",
+    "description": "Import-Export SCP CB and UER game assets Build: v102@74ff2a1",
     "warning": "",
     "support": 'COMMUNITY',
     "category": "Import-Export"}
@@ -47,10 +48,14 @@ enum_items_cache = [("0", "None", "")]
 def get_enum_items(self, context):
     return enum_items_cache
 
-def load_sound_emitters():
+def load_sound_emitters(self=None, context=None):
     global enum_items_cache
     enum_items_cache = []
-    game_path = Path(bpy.context.preferences.addons[__package__].preferences.game_path)
+    
+    if self is not None:
+        game_path = Path(self.game_path)
+    else:
+        game_path = Path(bpy.context.preferences.addons[__package__].preferences.game_path)
 
     rooms_ini = None
     rooms_ini_path = os.path.join(game_path, "Data", "rooms.ini")
@@ -64,10 +69,14 @@ def load_sound_emitters():
             if len(result) > 0:
                 result = result[0].lower()
 
-            enum_items_cache.append((str(key_idx), result, result))
+            enum_items_cache.append((str(key_idx + 1), result, result))
+
+        if len(enum_items_cache) > 0:
+            enum_items_cache.insert(0, ("0", "None", ""))
+            enum_items_cache.append(("CUSTOM", "Custom", ""))
 
     if len(enum_items_cache) == 0:
-        enum_items_cache = [("0", "None", "")]
+        enum_items_cache = [("0", "None", ""), ("CUSTOM", "Custom", "")]
 
 class CB_OT_RefreshSoundIds(Operator):
     bl_idname = "cb.gather_sound_ids"
@@ -82,12 +91,31 @@ class CB_OT_RefreshSoundIds(Operator):
 
         return {'FINISHED'}
 
+def get_sound_emitter_id(self):
+    enum_index = self.get("sound_emitter_id", 0)
+
+    global enum_items_cache
+    item_count = len(enum_items_cache)
+    if enum_index >= item_count:
+        enum_index = item_count - 1
+
+    return enum_index
+
+def set_sound_emitter_id(self, value):
+    global enum_items_cache
+    item_count = len(enum_items_cache)
+    if value != item_count:
+        self["sound_emitter_id"] = value
+
+    self["sound_emitter_id_ui"] = value
+
 class SCPCBAddonPrefs(AddonPreferences):
     bl_idname = __name__
     game_path: StringProperty(
         name="Game Path",
         description="Path to the game directory",
-        subtype="DIR_PATH"
+        subtype="DIR_PATH",
+        update=load_sound_emitters
     )
 
     room_scale: FloatProperty(
@@ -195,10 +223,17 @@ class CBObjectPropertiesGroup(PropertyGroup):
             default="",
     )
 
-    sound_emitter_id: EnumProperty(
-        name="Sound Emitter ID",
+    sound_emitter_id: IntProperty(
+        name = "Sound Emitter ID",
+        description = "Id of the sound we are using"
+        )
+
+    sound_emitter_id_ui: EnumProperty(
+        name="",
         description = "Id of the sound we are using",
-        items=get_enum_items
+        items=get_enum_items,
+        get=get_sound_emitter_id,
+        set=set_sound_emitter_id
     )
 
     has_collision: BoolProperty(
@@ -534,7 +569,11 @@ def render_sound_emitter(context, layout, active_property):
     row.operator("cb.gather_sound_ids")
     row = col.row()
     row.label(text='Sound Emitter ID:')
-    row.prop(active_property, "sound_emitter_id", text='')
+    row.prop(active_property, "sound_emitter_id_ui", text='')
+    if active_property.sound_emitter_id_ui == "CUSTOM":
+        row = col.row()
+        row.label(text='Sound Emitter ID Value:')
+        row.prop(active_property, "sound_emitter_id")
 
 def render_entity_model(context, layout, active_property):
     box = layout.split()

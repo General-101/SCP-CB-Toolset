@@ -590,7 +590,7 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
 
             entity_dict["entity_type"] = "soundemitter"
             entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
-            entity_dict["id"] = int(ob.cb.sound_emitter_id)
+            entity_dict["id"] = ob.cb.sound_emitter_id
             entity_dict["range"] = ob.data.distance_max
             rmesh_dict["entities"].append(entity_dict)
 
@@ -1187,7 +1187,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 rot = Quaternion()
                 scl = Vector((1, 1, 1))
                 object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
-                object_mesh.cb.sound_emitter_id = str(entity_dict["id"])
+                object_mesh.cb.sound_emitter_id = entity_dict["id"]
                 object_mesh.data.distance_max = entity_dict["range"]
 
             elif entity_dict["entity_type"] == "playerstart":
