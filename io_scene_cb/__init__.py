@@ -5,7 +5,6 @@ bl_info = {
     "blender": (4, 0, 0),
     "location": "File > Import-Export",
     "description": "Import-Export SCP CB and UER game assets Build: BUILD_VERSION_STR",
-    "description": "Import-Export SCP CB and UER game assets Build: v102@74ff2a1",
     "warning": "",
     "support": 'COMMUNITY',
     "category": "Import-Export"}
@@ -62,8 +61,12 @@ def load_sound_emitters(self=None, context=None):
     if os.path.isfile(rooms_ini_path):
         rooms_ini = configparser.ConfigParser()
         rooms_ini.read(rooms_ini_path)
-        
-        for key_idx, entry in enumerate(rooms_ini.items("room ambience")):
+
+        room_anbience_list = []
+        if rooms_ini.has_section("room ambience"):
+            room_anbience_list = rooms_ini.items("room ambience")
+
+        for key_idx, entry in enumerate(room_anbience_list):
             value = entry[1]
             result = os.path.basename(value).rsplit(".", 1)
             if len(result) > 0:

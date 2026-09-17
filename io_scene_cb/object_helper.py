@@ -440,6 +440,7 @@ def get_used_materials(mesh):
 
 def bake_lightmaps(context):
     set_gamma = bpy.context.preferences.addons[__package__].preferences.set_gamma
+    game_path = bpy.context.preferences.addons[__package__].preferences.game_path
     bpy.ops.wm.console_toggle()
     selected_obs = context.selected_objects
     depsgraph = context.evaluated_depsgraph_get()
@@ -556,7 +557,7 @@ def bake_lightmaps(context):
                         connect_inputs(mat.node_tree, lightmap_node, "Color", node_group, "Light Map")
 
             if not ob.cb.is_per_vertex:
-                save_path = os.path.join(bpy.path.abspath("//"), "lightmaps", f"{image_name}.png")
+                save_path = os.path.join(game_path, "lightmaps", f"{image_name}.png")
                 os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
                 image.filepath_raw = save_path
