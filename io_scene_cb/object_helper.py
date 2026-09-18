@@ -72,7 +72,7 @@ def create_object(ob_bm, ob_data, ob_transform, model_path):
             temp_data = bpy.data.meshes.new("door_entity")
             bm = bmesh.new()
             is_simple=True
-            import_b3d(bpy.context, model_path, False, True, print, bm, ob_data, is_simple)
+            import_b3d(bpy.context, model_path, False, True, False, True, print, bm, ob_data, is_simple)
             for f in bm.faces:
                 f.material_index = material_count + f.material_index
 
@@ -106,19 +106,51 @@ def create_door(door_type=DoorType.normal, button_type=ButtonType.normal, door_s
     game_path = bpy.context.preferences.addons[__package__].preferences.game_path
     room_scale = bpy.context.preferences.addons[__package__].preferences.room_scale
     BigDoorLeftPath = Path(os.path.join(game_path, "GFX", "map", "ContDoorLeft.x"))
+    if not BigDoorLeftPath.is_file():
+        BigDoorLeftPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "contdoorleft.b3d"))
+
     BigDoorRightPath = Path(os.path.join(game_path, "GFX", "map", "ContDoorRight.x"))
+    if not BigDoorRightPath.is_file():
+        BigDoorRightPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "contdoorright.b3d"))
+
     HeavyDoorLeftPath = Path(os.path.join(game_path, "GFX", "map", "heavydoor1.x"))
+    if not HeavyDoorLeftPath.is_file():
+        HeavyDoorLeftPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "HeavyDoor1.b3d"))
+
     HeavyDoorRightPath = Path(os.path.join(game_path, "GFX", "map", "heavydoor2.x"))
+    if not HeavyDoorRightPath.is_file():
+        HeavyDoorRightPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "HeavyDoor2.b3d"))
+
     ElevatorDoorsPath = Path(os.path.join(game_path, "GFX", "map", "elevatordoor.b3d"))
+    if not ElevatorDoorsPath.is_file():
+        ElevatorDoorsPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "ElevatorDoor.b3d"))
+
     DoorFramePath = Path(os.path.join(game_path, "GFX", "map", "doorframe.x"))
+    if not DoorFramePath.is_file():
+        DoorFramePath = Path(os.path.join(game_path, "GFX", "Map", "Props", "DoorFrame.b3d"))
+
     DoorPath = Path(os.path.join(game_path, "GFX", "map", "door01.x"))
+    if not DoorPath.is_file():
+        DoorPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "Door01.b3d"))
+
     ButtonPath = Path(os.path.join(game_path, "GFX", "map", "Button.x"))
+    if not ButtonPath.is_file():
+        ButtonPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "Button.b3d"))
+
     if button_type == ButtonType.code:
         ButtonPath = Path(os.path.join(game_path, "GFX", "map", "ButtonCode.x"))
+        if not ButtonPath.is_file():
+            ButtonPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "ButtonCode.b3d"))
+
     elif button_type == ButtonType.keycard:
         ButtonPath = Path(os.path.join(game_path, "GFX", "map", "ButtonKeycard.x"))
+        if not ButtonPath.is_file():
+            ButtonPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "ButtonKeycard.b3d"))
+
     elif button_type == ButtonType.scanner:
         ButtonPath = Path(os.path.join(game_path, "GFX", "map", "ButtonScanner.x"))
+        if not ButtonPath.is_file():
+            ButtonPath = Path(os.path.join(game_path, "GFX", "Map", "Props", "ButtonScanner.b3d"))
 
     if door_type == DoorType.big:
         x = 0
