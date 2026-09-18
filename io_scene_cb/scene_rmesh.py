@@ -1243,7 +1243,11 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     object_mesh.cb.texture_path = texture_path
 
                 entity_collection.objects.link(object_mesh)
-                if not file_type == ImportFileType.rmesh_uer:
+                has_position_data = True
+                if entity_dict["entity_type"] == "model" and is_uer_prop:
+                    has_position_data = False
+
+                if has_position_data:
                     loc = room_scale * Vector(flip(entity_dict["position"]))
                     rot = get_blender_rot(entity_dict["euler_rotation"])
                     scl = Vector(entity_dict["scale"])

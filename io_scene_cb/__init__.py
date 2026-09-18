@@ -42,7 +42,7 @@ from bpy_extras.io_utils import (
 if (4, 1, 0) <= bpy.app.version:
     from bpy.types import FileHandler
 
-enum_items_cache = [("0", "None", "")]
+enum_items_cache = [("0", "None", ""), ("CUSTOM", "Custom", "")]
 
 def get_enum_items(self, context):
     return enum_items_cache
