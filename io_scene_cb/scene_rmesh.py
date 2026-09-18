@@ -1244,7 +1244,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
 
                 entity_collection.objects.link(object_mesh)
                 has_position_data = True
-                if entity_dict["entity_type"] == "model" and is_uer_prop:
+                if entity_dict["entity_type"] == "model" and (file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2):
                     has_position_data = False
 
                 if has_position_data:
