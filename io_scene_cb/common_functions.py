@@ -9,7 +9,8 @@ from math import radians
 from enum import Enum, auto
 from mathutils import Matrix, Vector, Quaternion, Euler
 
-SHADER_RESOURCES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "shader_resources.blend")
+SHADER_RESOURCES_5 = os.path.join(os.path.dirname(os.path.realpath(__file__)), "shaders", "5.0", "shader_resources.blend")
+SHADER_RESOURCES_4 = os.path.join(os.path.dirname(os.path.realpath(__file__)), "shaders", "4.0", "shader_resources.blend")
 SHADER_NODE_NAMES = ("rmesh_material", "b3d_material", "cb_material")
 
 ROOMSCALE = 0.00625
@@ -228,13 +229,17 @@ def get_output_material_node(mat):
                 output_material_node = node
                 break
 
-    if output_material_node is None:
+    if output_material_node is None and use_nodes:
         output_material_node = mat.node_tree.nodes.new("ShaderNodeOutputMaterial")
 
     return output_material_node
 
-def get_shader_node(tree, shader_resource, shader_name):
+def get_shader_node(tree, shader_name):
     if not bpy.data.node_groups.get(shader_name):
+        shader_resource = SHADER_RESOURCES_4
+        if bpy.app.version >= (5, 0, 0):
+            shader_resource = SHADER_RESOURCES_5
+
         with bpy.data.libraries.load(shader_resource) as (data_from, data_to):
             data_to.node_groups.append(data_from.node_groups[data_from.node_groups.index(shader_name)])
 

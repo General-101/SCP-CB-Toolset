@@ -13,8 +13,7 @@ from .common_functions import (RandomColorGenerator,
                                flip,
                                get_shader_node,
                                connect_inputs,
-                               generate_texture_mapping,
-                               SHADER_RESOURCES)
+                               generate_texture_mapping)
 
 def import_mesh(data, node, random_color_gen, local_asset_path, room_scale, material_type_enum):
     vertices = [room_scale * Vector(flip(vertex)) for vertex in node["vertices"]]
@@ -48,7 +47,7 @@ def import_mesh(data, node, random_color_gen, local_asset_path, room_scale, mate
         shader_emission_input = "Emission Color"
 
     else:
-        smf_node = get_shader_node(material.node_tree, SHADER_RESOURCES, "cb_material")
+        smf_node = get_shader_node(material.node_tree, "cb_material")
         smf_node.name = "smf Material"
         smf_node.location = (-440.0, 0.0)
         connect_inputs(material.node_tree, smf_node, "Shader", output_material_node, "Surface")

@@ -491,17 +491,18 @@ def bake_lightmaps(context):
     material_settings = {}
     for mat in bpy.data.materials:
         output_material_node = get_output_material_node(mat)
-        node_group = get_linked_node(output_material_node, "Surface", "GROUP")
-        if node_group and node_group.node_tree.name in SHADER_NODE_NAMES:
-            material_settings[mat.name] = {"is_fullbright": node_group.inputs["Is Fullbright"].default_value, 
-                                           "use_shine": node_group.inputs["Use Shine"].default_value, 
-                                           "use_specular_mask": node_group.inputs["Use Specular Mask"].default_value, 
-                                           "use_normal": node_group.inputs["Use Normal"].default_value}
+        if output_material_node is not None:
+            node_group = get_linked_node(output_material_node, "Surface", "GROUP")
+            if node_group and node_group.node_tree.name in SHADER_NODE_NAMES:
+                material_settings[mat.name] = {"is_fullbright": node_group.inputs["Is Fullbright"].default_value, 
+                                            "use_shine": node_group.inputs["Use Shine"].default_value, 
+                                            "use_specular_mask": node_group.inputs["Use Specular Mask"].default_value, 
+                                            "use_normal": node_group.inputs["Use Normal"].default_value}
 
-            node_group.inputs["Is Fullbright"].default_value = True
-            node_group.inputs["Use Shine"].default_value = False
-            node_group.inputs["Use Specular Mask"].default_value = False
-            node_group.inputs["Use Normal"].default_value = False
+                node_group.inputs["Is Fullbright"].default_value = True
+                node_group.inputs["Use Shine"].default_value = False
+                node_group.inputs["Use Specular Mask"].default_value = False
+                node_group.inputs["Use Normal"].default_value = False
 
     bpy.ops.object.select_all(action='DESELECT')
     for mesh_name, ob_group in ob_groups.items():

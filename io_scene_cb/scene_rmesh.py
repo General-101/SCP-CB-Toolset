@@ -27,7 +27,6 @@ from .common_functions import (RandomColorGenerator,
                                flip,
                                get_shader_node,
                                generate_texture_mapping,
-                               SHADER_RESOURCES,
                                SHADER_NODE_NAMES)
 
 MIN_BUTTON_LENGTH = 0.01
@@ -738,7 +737,7 @@ def generate_mesh_data(mesh_dict, mesh_data, mesh_idx, local_asset_path, random_
             shader_emission_input = "Emission Color"
 
         else:
-            rmesh_node = get_shader_node(mat.node_tree, SHADER_RESOURCES, "cb_material")
+            rmesh_node = get_shader_node(mat.node_tree, "cb_material")
             rmesh_node.name = "RMESH Material"
             rmesh_node.location = (-440.0, 0.0)
             connect_inputs(mat.node_tree, rmesh_node, "Shader", output_material_node, "Surface")
@@ -1104,11 +1103,13 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 if use_light_radius:
                     object_data.shadow_soft_size = room_scale * entity_dict["range"]
                     object_data.energy = entity_dict["intensity"]
-                    object_data.normalize = False
+                    if bpy.app.version >= (4, 5, 0):
+                        object_data.normalize = False
                 else:
                     object_data.shadow_soft_size = 0
                     object_data.energy = entity_dict["intensity"] * (room_scale * entity_dict["range"])
-                    object_data.normalize = False
+                    if bpy.app.version >= (4, 5, 0):
+                        object_data.normalize = False
 
                 r, g, b = entity_dict["color"].split(" ")
                 object_data.color = (int(r) / 255, int(g) / 255, int(b) / 255)
@@ -1136,11 +1137,13 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 if use_light_radius:
                     object_data.shadow_soft_size = room_scale * entity_dict["range"]
                     object_data.energy = entity_dict["intensity"]
-                    object_data.normalize = False
+                    if bpy.app.version >= (4, 5, 0):
+                        object_data.normalize = False
                 else:
                     object_data.shadow_soft_size = 0
                     object_data.energy = entity_dict["intensity"] * (room_scale * entity_dict["range"])
-                    object_data.normalize = False
+                    if bpy.app.version >= (4, 5, 0):
+                        object_data.normalize = False
 
                 r, g, b = entity_dict["color"].split(" ")
                 object_data.color = (int(r) / 255, int(g) / 255, int(b) / 255)

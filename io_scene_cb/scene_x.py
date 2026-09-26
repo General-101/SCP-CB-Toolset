@@ -16,7 +16,6 @@ from .common_functions import (RandomColorGenerator,
                                clean_string,
                                generate_texture_mapping,
                                get_ingame_scale,
-                               SHADER_RESOURCES,
                                SHADER_NODE_NAMES)
 
 def generate_materials(materials_dict, random_color_gen, mesh, is_simple, ob_data, local_asset_path, error_log, material_type_enum, material_list=None):
@@ -63,7 +62,7 @@ def generate_materials(materials_dict, random_color_gen, mesh, is_simple, ob_dat
             shader_emission_input = "Emission Color"
 
         else:
-            x_node = get_shader_node(material.node_tree, SHADER_RESOURCES, "cb_material")
+            x_node = get_shader_node(material.node_tree, "cb_material")
             x_node.name = "X Material"
             x_node.location = (-440.0, 0.0)
             connect_inputs(material.node_tree, x_node, "Shader", output_material_node, "Surface")

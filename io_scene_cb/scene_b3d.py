@@ -25,7 +25,6 @@ from .common_functions import (RandomColorGenerator,
                                connect_inputs,
                                generate_texture_mapping,
                                get_ingame_scale,
-                               SHADER_RESOURCES,
                                SHADER_NODE_NAMES)
 
 class TextureFXFlags(Flag):
@@ -762,9 +761,9 @@ def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
                                     lightmap_node = node
                                     break
 
-                    mat_r, mat_g, mat_b, mat_a = bdsf_principled.inputs[0].default_value # Ignore the alpha from here.
-                    mat_a = bdsf_principled.inputs[4].default_value
-                    mat_shine = bdsf_principled.inputs[13].default_value
+                    mat_r, mat_g, mat_b, mat_a = bdsf_principled.inputs["Base Color"].default_value # Ignore the alpha from here.
+                    mat_a = bdsf_principled.inputs["Alpha"].default_value
+                    mat_shine = bdsf_principled.inputs["Specular IOR Level"].default_value
                     mat_blend_type = 1
 
                 texture_entries = [lightmap_node, diffuse_node]
@@ -1464,7 +1463,7 @@ def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_
                 shader_emission_input = "Emission Color"
 
             else:
-                b3d_node = get_shader_node(material.node_tree, SHADER_RESOURCES, "cb_material")
+                b3d_node = get_shader_node(material.node_tree, "cb_material")
                 b3d_node.name = "B3D Material"
                 b3d_node.location = (-440.0, 0.0)
                 set_material_properties(b3d_node, material_dict)

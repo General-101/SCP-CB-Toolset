@@ -14,7 +14,7 @@ import bpy
 import configparser
 
 from pathlib import Path
-from .common_functions import get_shader_node, SHADER_RESOURCES, ObjectType
+from .common_functions import get_shader_node, ObjectType
 from .scene_rmesh import update_object
 from .object_helper import connect_lightmaps, disconnect_lightmaps, bake_lightmaps
 
@@ -724,7 +724,7 @@ class CBRMAT_OT_CBShader(Operator):
     def execute(self, context):
         node_tree = context.space_data.edit_tree
 
-        shader_node = get_shader_node(node_tree, SHADER_RESOURCES, "cb_material")
+        shader_node = get_shader_node(node_tree, "cb_material")
         shader_node.location = context.space_data.cursor_location
 
         return {'FINISHED'}

@@ -16,7 +16,6 @@ from .common_functions import (RandomColorGenerator,
                                get_shader_node,
                                connect_inputs,
                                generate_texture_mapping,
-                               SHADER_RESOURCES,
                                ObjectType)
 
 def import_node_recursive(context, data, node, use_light_radius, random_color_gen, local_asset_path, room_scale, parent_ob=None):
