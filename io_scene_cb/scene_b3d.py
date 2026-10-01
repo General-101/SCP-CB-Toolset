@@ -342,6 +342,9 @@ def get_bone_distance(object_mesh, node, parent_ob, room_scale):
     elif child_node_count == 0 and parent_ob is not None and isinstance(parent_ob, bpy.types.EditBone):
         bone_distance = parent_ob.length
 
+    if bone_distance < bpy.context.preferences.addons[__package__].preferences.room_scale:
+        bone_distance = bpy.context.preferences.addons[__package__].preferences.room_scale
+
     return bone_distance
 
 def import_node_recursive(context, data, node, material_list, room_scale, set_gamma, armature=None, strips=None, has_skeleton=False, use_light_radius=True, parent_ob=None, 
