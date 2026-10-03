@@ -297,22 +297,184 @@ def parse_kv_string(s):
 
     return result
 
-def get_bone_distance(object_mesh, node, parent_ob, room_scale):
+def get_bone_distance(filepath, object_mesh, node, parent_ob, room_scale):
     bone_distance = room_scale
 
-    is_spine = False
-    if "spine" in node["name"].lower():
-        is_spine = True
-    
+    bone_blacklist = []
+    file_name = os.path.basename(filepath).lower().replace(" ", "_")
+    node_name = node["name"].lower().replace(" ", "_")
+    if file_name == "035.b3d":
+        bone_blacklist = ["no_name"]
+        if "bip01_spine" == node_name:
+            bone_blacklist.append("bip01_l_thigh")
+            bone_blacklist.append("bip01_r_thigh")
+        elif "bip01_neck" == node_name:
+            bone_blacklist.append("bip01_l_clavicle")
+            bone_blacklist.append("bip01_r_clavicle")
+        elif "bip01_r_hand" == node_name:
+            bone_blacklist.append("firespot")
+    elif file_name == "205_demon1.b3d":
+        if "hips" == node_name:
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "chest" == node_name:
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+        elif "palm_01_l" == node_name:
+            bone_blacklist.append("thumb_01_l")
+        elif "palm_01_r" == node_name:
+            bone_blacklist.append("thumb_01_r")
+    elif file_name == "205_demon2.b3d":
+        if "hips" == node_name:
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "chest" == node_name:
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+        elif "palm_01_l" == node_name:
+            bone_blacklist.append("thumb_01_l")
+        elif "palm_01_r" == node_name:
+            bone_blacklist.append("thumb_01_r")
+    elif file_name == "205_demon3.b3d":
+        if "hips" == node_name:
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "chest" == node_name:
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+        elif "palm_01_l" == node_name:
+            bone_blacklist.append("thumb_01_l")
+        elif "palm_01_r" == node_name:
+            bone_blacklist.append("thumb_01_r")
+    elif file_name == "205_woman.b3d":
+        if "hips" == node_name:
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "chest" == node_name:
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+        elif "palm_01_l" == node_name:
+            bone_blacklist.append("thumb_01_l")
+        elif "palm_01_r" == node_name:
+            bone_blacklist.append("thumb_01_r")
+    elif file_name == "372.b3d":
+        if "joint2" == node_name:
+            bone_blacklist.append("joint18")
+            bone_blacklist.append("joint23")
+        elif "joint6" == node_name:
+            bone_blacklist.append("joint9")
+            bone_blacklist.append("joint14")
+    elif file_name == "1499-1.b3d":
+        bone_blacklist = ["no_name"]
+        if "bip01_spine" == node_name:
+            bone_blacklist.append("bip01_l_thigh")
+            bone_blacklist.append("bip01_r_thigh")
+        elif "bip01_neck" == node_name:
+            bone_blacklist.append("bip01_l_clavicle")
+            bone_blacklist.append("bip01_r_clavicle")
+        elif "bip01_l_hand" == node_name:
+            bone_blacklist.append("firespot")
+    elif file_name == "classd.b3d":
+        bone_blacklist = ["no_name"]
+        if "bip01_spine" == node_name:
+            bone_blacklist.append("bip01_l_thigh")
+            bone_blacklist.append("bip01_r_thigh")
+        elif "bip01_neck" == node_name:
+            bone_blacklist.append("bip01_l_clavicle")
+            bone_blacklist.append("bip01_r_clavicle")
+        elif "bip01_r_hand" == node_name:
+            bone_blacklist.append("firespot")
+    elif file_name == "clerk.b3d":
+        bone_blacklist = ["no_name"]
+        if "bip01_spine" == node_name:
+            bone_blacklist.append("bip01_l_thigh")
+            bone_blacklist.append("bip01_r_thigh")
+        elif "bip01_neck" == node_name:
+            bone_blacklist.append("bip01_l_clavicle")
+            bone_blacklist.append("bip01_r_clavicle")
+        elif "bip01_r_hand" == node_name:
+            bone_blacklist.append("firespot")
+    elif file_name == "guard.b3d":
+        if "torso" == node_name:
+            bone_blacklist.append("torso.001")
+            bone_blacklist.append("upper_leg.l")
+            bone_blacklist.append("upper_leg.r")
+        elif "upper_arm.r" == node_name:
+            bone_blacklist.append("upper_arm.r.002")
+        elif "upper_arm.l" == node_name:
+            bone_blacklist.append("upper_arm.l.002")
+        elif "hand.r" == node_name:
+            bone_blacklist.append("thumb01.r")
+            bone_blacklist.append("thumb01.r.001")
+        elif "hand.l" == node_name:
+            bone_blacklist.append("paper")
+            bone_blacklist.append("thumb01.l")
+    elif file_name == "mtf2.b3d":
+        if "hips" == node_name:
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "chest" == node_name:
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+        elif "palm_01_l" == node_name:
+            bone_blacklist.append("thumb_01_l")
+        elif "palm_01_r" == node_name:
+            bone_blacklist.append("thumb_01_r")
+    elif file_name == "naziofficer.b3d":
+        bone_blacklist = ["no_name"]
+        if "bip01_spine" == node_name:
+            bone_blacklist.append("bip01_l_thigh")
+            bone_blacklist.append("bip01_r_thigh")
+        elif "bip01_neck" == node_name:
+            bone_blacklist.append("bip01_l_clavicle")
+            bone_blacklist.append("bip01_r_clavicle")
+        elif "bip01_r_hand" == node_name:
+            bone_blacklist.append("firespot")
+    elif file_name == "scp-939.b3d":
+        if "bone" == node_name:
+            bone_blacklist.append("bone_005")
+    elif file_name == "scp-966.b3d":
+        if "spine" == node_name:
+            bone_blacklist.append("pelvis_l")
+            bone_blacklist.append("pelvis_r")
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "spine_003" == node_name:
+            bone_blacklist.append("breast_l")
+            bone_blacklist.append("breast_r")
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+    elif file_name == "zombie1.b3d":
+        if "hips" == node_name:
+            bone_blacklist.append("thigh_l")
+            bone_blacklist.append("thigh_r")
+        elif "chest" == node_name:
+            bone_blacklist.append("shoulder_l")
+            bone_blacklist.append("shoulder_r")
+        elif "palm_01_l" == node_name:
+            bone_blacklist.append("thumb_01_l")
+        elif "palm_01_r" == node_name:
+            bone_blacklist.append("thumb_01_r")
+    elif file_name == "zombiesurgeon.b3d":
+        bone_blacklist = ["no_name"]
+        if "bip01_l_hand" == node_name:
+            bone_blacklist.append("firespot")
+        elif "bip01_neck" == node_name:
+            bone_blacklist.append("bip01_l_clavicle")
+            bone_blacklist.append("bip01_r_clavicle")
+        elif "bip01_head" == node_name:
+            bone_blacklist.append("bip01_ponytail1")
+
     child_nodes = []
     for child_node in node["nodes"]:
-        child_name = child_node["name"].lower()
-        if is_spine:
-            if not ("no_name" in child_name or "no name" in child_name) and "spine" in child_name:
-                child_nodes.append(child_node)
-        else:
-            if not ("no_name" in child_name or "no name" in child_name):
-                child_nodes.append(child_node)
+        child_name = child_node["name"].lower().replace(" ", "_")
+        add_node = True
+        for blacklisted in bone_blacklist:
+            if blacklisted in child_name:
+                add_node = False
+
+        if add_node:
+            child_nodes.append(child_node)
 
     child_node_count = len(child_nodes)
     if child_node_count == 1:
@@ -347,12 +509,16 @@ def get_bone_distance(object_mesh, node, parent_ob, room_scale):
 
     return bone_distance
 
-def import_node_recursive(context, data, node, material_list, room_scale, set_gamma, armature=None, strips=None, has_skeleton=False, use_light_radius=True, parent_ob=None, 
+def import_node_recursive(context, filepath, data, node, material_list, room_scale, set_gamma, armature=None, strips=None, has_skeleton=False, use_light_radius=True, parent_ob=None, 
                           last_mesh=None, is_simple=False, bm=None, ob_data=None, bm_transform=None, world_transform=None, rotation_angle=0, rotation_axis="Z"):
     has_skin = bool(node.get("bones"))
     has_key = node.get("key") is not None
     has_mesh = node.get("mesh") is not None
     generated_mesh = False
+    has_child_bones = False
+    for child_node in node["nodes"]:
+        if child_node.get("bones"):
+            has_child_bones = True
 
     rst, rsr, rss = room_scale.decompose()
     result = parse_kv_string(node["name"])
@@ -370,10 +536,10 @@ def import_node_recursive(context, data, node, material_list, room_scale, set_ga
             bpy.data.meshes.remove(mesh_data)
 
         for child_node in node["nodes"]:
-            import_node_recursive(context, data, child_node, material_list, room_scale, set_gamma, is_simple=is_simple, bm=bm, ob_data=ob_data, bm_transform=bm_transform, rotation_angle=rotation_angle, rotation_axis=rotation_axis)
+            import_node_recursive(context, filepath, data, child_node, material_list, room_scale, set_gamma, is_simple=is_simple, bm=bm, ob_data=ob_data, bm_transform=bm_transform, rotation_angle=rotation_angle, rotation_axis=rotation_axis)
 
     else:
-        if has_skin or has_key or armature:
+        if has_child_bones or armature:
             if armature is None:
                 armature_data = bpy.data.armatures.new(result["classname"])
                 armature = object_mesh =  bpy.data.objects.new(result["classname"], armature_data)
@@ -472,8 +638,8 @@ def import_node_recursive(context, data, node, material_list, room_scale, set_ga
                             tm_result = tm_result @ Matrix.Rotation(radians(rotation_angle), 4, rotation_axis)
 
                         object_mesh.matrix = tm_result
- 
-                object_mesh.length = get_bone_distance(object_mesh, node, parent_ob, rss[0])
+
+                object_mesh.length = get_bone_distance(filepath, object_mesh, node, parent_ob, rss[0])
 
         else:
             if result["classname"].lower().startswith("brush"):
@@ -607,6 +773,11 @@ def import_node_recursive(context, data, node, material_list, room_scale, set_ga
 
                 object_mesh.cb.object_type = str(ObjectType.entity_waypoint.value)
 
+            elif result["classname"].lower().startswith("bone"):
+                object_mesh = bpy.data.objects.new(result["classname"], None)
+                armature = object_mesh
+                context.collection.objects.link(object_mesh)
+
             else:
                 if not generated_mesh and has_mesh and not has_skeleton:
                     generated_mesh = True
@@ -663,7 +834,7 @@ def import_node_recursive(context, data, node, material_list, room_scale, set_ga
         world_transform = world_transform @ node_transform
 
         for child_node in node["nodes"]:
-            import_node_recursive(context, data, child_node, material_list, room_scale, set_gamma, armature, strips, has_skeleton, use_light_radius, object_mesh, last_mesh, world_transform=world_transform, rotation_angle=rotation_angle, rotation_axis=rotation_axis)
+            import_node_recursive(context, filepath, data, child_node, material_list, room_scale, set_gamma, armature, strips, has_skeleton, use_light_radius, object_mesh, last_mesh, world_transform=world_transform, rotation_angle=rotation_angle, rotation_axis=rotation_axis)
 
 def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
     rst, rsr, rss = room_scale.decompose()
@@ -1609,7 +1780,7 @@ def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_
             break
 
     for child_node in data["nodes"]:
-        import_node_recursive(context, data, child_node, material_list, room_scale, set_gamma, armature_ob, strips, has_skeleton, use_light_radius, is_simple=is_simple, bm=bm, ob_data=ob_data, rotation_angle=rotation_angle, rotation_axis=rotation_axis)
+        import_node_recursive(context, filepath, data, child_node, material_list, room_scale, set_gamma, armature_ob, strips, has_skeleton, use_light_radius, is_simple=is_simple, bm=bm, ob_data=ob_data, rotation_angle=rotation_angle, rotation_axis=rotation_axis)
 
     if not is_simple:
         if context.view_layer.objects.active is not None:
