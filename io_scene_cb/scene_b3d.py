@@ -255,7 +255,7 @@ def import_fcurve_data(room_scale, ob, strips, bone_name, keyframe_dict, node_tr
 
 def parse_kv_string(s):
     if not s:
-        return s
+        return {"classname": "Node"}
 
     result = {}
     found_kv = False
