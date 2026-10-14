@@ -904,7 +904,7 @@ def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
 
                     mat_r, mat_g, mat_b, mat_a = node_group.inputs["Diffuse Overlay"].default_value
                     mat_shine = node_group.inputs["Shine"].default_value
-                    mat_blend_type = node_group.inputs["Blend Type"].default_value
+                    mat_blend_type = int(node_group.inputs["Blend Type"].default_value)
                     mat_fx = 0
                     if node_group.inputs["Full Bright"].default_value:
                         mat_fx += MaterialFXFlags.full_bright.value
