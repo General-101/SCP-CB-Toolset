@@ -97,7 +97,7 @@ def generate_materials(materials_dict, random_color_gen, mesh, is_simple, ob_dat
                 texture_bump.interpolation = 'Cubic'
                 texture_bump.image.colorspace_settings.name = 'Non-Color'
                 texture_bump.location = (-720.0, -380)
-                
+
                 if material_type_enum == MaterialType.simple:
                     normal_map_node = material.node_tree.nodes.new("ShaderNodeNormalMap")
                     normal_map_node.location = (-720.0, -380)

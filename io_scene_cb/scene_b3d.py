@@ -509,7 +509,7 @@ def get_bone_distance(filepath, object_mesh, node, parent_ob, room_scale):
 
     return bone_distance
 
-def import_node_recursive(context, filepath, data, node, material_list, room_scale, set_gamma, armature=None, strips=None, has_skeleton=False, use_light_radius=True, parent_ob=None, 
+def import_node_recursive(context, filepath, data, node, material_list, room_scale, set_gamma, armature=None, strips=None, has_skeleton=False, use_light_radius=True, parent_ob=None,
                           last_mesh=None, is_simple=False, bm=None, ob_data=None, bm_transform=None, world_transform=None, rotation_angle=0, rotation_axis="Z"):
     has_skin = bool(node.get("bones"))
     has_key = node.get("key") is not None
@@ -1135,7 +1135,7 @@ def get_scene_bones(b3d_data, node_dict, depsgraph, room_scale, rotation_angle, 
 
                 node_transform = parent_matrix.inverted() @ (bone.matrix_local @ matrix_modifier)
             loc, rot_quat, scl = node_transform.decompose()
-            
+
 
             tx, ty, tz = rss * loc
             sx, sy, sz = scl
@@ -1577,7 +1577,7 @@ def find_bones(node, bone_check_list, uv_counts):
     for child_node in node["nodes"]:
         find_bones(child_node, bone_check_list, uv_counts)
 
-def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_modifier, use_game_rules, report, bm=None, ob_data=None, is_simple=False, error_log=None, 
+def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_modifier, use_game_rules, report, bm=None, ob_data=None, is_simple=False, error_log=None,
                  random_color_gen=None):
     game_path = Path(bpy.context.preferences.addons[__package__].preferences.game_path)
     room_scale, rotation_angle, rotation_axis = get_ingame_scale(game_path, str(filepath), use_game_rules)

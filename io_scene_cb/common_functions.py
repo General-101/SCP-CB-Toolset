@@ -253,7 +253,7 @@ def generate_texture_mapping(node_tree, input_node, input_key="Vector"):
     uv_node = node_tree.nodes.new("ShaderNodeUVMap")
 
     x, y = input_node.location
-    mapping_node.location = (-180.0 + x, 0.0 + y) 
+    mapping_node.location = (-180.0 + x, 0.0 + y)
     uv_node.location = (-360.0 + x, 0.0 + y)
 
     connect_inputs(node_tree, uv_node, "UV", mapping_node, "Vector")
@@ -355,8 +355,8 @@ def get_ingame_scale(game_path, filepath, use_game_rules, is_inverse=False):
             return result, rotation_angle, rotation_axis
 
     # We are taking the room scale in the game itself and getting the inverse.
-    # We use it on the scales used by the game to get something we can scale independently. - Gen 
-    game_scale_inverse = 256 
+    # We use it on the scales used by the game to get something we can scale independently. - Gen
+    game_scale_inverse = 256
     game_scale = (1 / game_scale_inverse)
 
     items_ini = None

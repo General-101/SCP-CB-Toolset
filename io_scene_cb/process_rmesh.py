@@ -20,6 +20,7 @@ class ImportFileType(Enum):
     rmesh_auto = 0
     rmesh = auto()
     rmesh_tb = auto()
+    rmesh_nc = auto()
     rmesh_uer = auto()
     rmesh_uer2 = auto()
     rmesh_salvage = auto()
@@ -27,6 +28,7 @@ class ImportFileType(Enum):
 class ExportFileType(Enum):
     rmesh = 0
     rmesh_tb = auto()
+    rmesh_nc = auto()
     rmesh_uer = auto()
     rmesh_uer2 = auto()
     rmesh_salvage = auto()
@@ -97,10 +99,11 @@ def read_rmesh(file_path, file_type):
         byte_length = file_path.stat().st_size
         if byte_length == 0:
             return file_type, rmesh_dict
-            
+
         rmesh_dict["rmesh_file_type"] = read_string(rmesh_stream)
-        if rmesh_dict["rmesh_file_type"] != "RoomMesh" and rmesh_dict["rmesh_file_type"] != "RoomMesh.HasTriggerBox" and rmesh_dict["rmesh_file_type"] != "RoomMesh2" and rmesh_dict["rmesh_file_type"] != "RM":
-            raise ValueError('Input file was "%s" instead of "RoomMesh", "RoomMesh.HasTriggerBox", "RoomMesh2", or RM and therefore is not an RMESH file' % rmesh_dict["rmesh_file_type"])
+        rmesh_types = ("RoomMesh", "RoomMesh.HasTriggerBox", "RoomMesh.HasNoColl", "RoomMesh2", "RM")
+        if not rmesh_dict["rmesh_file_type"] in rmesh_types:
+            raise ValueError('Input file was "%s" instead of "RoomMesh", "RoomMesh.HasTriggerBox", "RoomMesh.HasNoColl", "RoomMesh2", or RM and therefore is not an RMESH file' % rmesh_dict["rmesh_file_type"])
 
         if file_type == ImportFileType.rmesh_auto:
             if rmesh_dict["rmesh_file_type"] == "RoomMesh":
@@ -108,6 +111,9 @@ def read_rmesh(file_path, file_type):
 
             elif rmesh_dict["rmesh_file_type"] == "RoomMesh.HasTriggerBox":
                 file_type = ImportFileType.rmesh_tb
+
+            elif rmesh_dict["rmesh_file_type"] == "RoomMesh.HasNoColl":
+                file_type = ImportFileType.rmesh_nc
 
             elif rmesh_dict["rmesh_file_type"] == "RoomMesh2":
                 file_type = ImportFileType.rmesh_uer2
@@ -123,6 +129,8 @@ def read_rmesh(file_path, file_type):
             read_mesh_data(rmesh_stream, file_type, rmesh_dict["render_meshes"])
 
         read_mesh_data(rmesh_stream, file_type, rmesh_dict["collision_meshes"], True)
+        if file_type == ImportFileType.rmesh_nc:
+            read_mesh_data(rmesh_stream, file_type, rmesh_dict["render_meshes"])
 
         if file_type == ImportFileType.rmesh_tb or file_type == ImportFileType.rmesh_salvage:
             trigger_box_count = read_integer(rmesh_stream)
@@ -222,12 +230,13 @@ def read_rmesh(file_path, file_type):
                 entity_dict["position"] = read_vector(rmesh_stream)
                 entity_dict["euler_rotation"] = read_string(rmesh_stream)
 
-            elif entity_dict["entity_type"] == "model":
+            elif entity_dict["entity_type"] == "model" or entity_dict["entity_type"] == "model_nocoll":
                 entity_dict["model_name"] = read_string(rmesh_stream)
                 if not file_type == ImportFileType.rmesh_uer:
                     entity_dict["position"] = read_vector(rmesh_stream)
-                    entity_dict["euler_rotation"] = read_vector(rmesh_stream)
-                    entity_dict["scale"] = read_vector(rmesh_stream)
+                    if not entity_dict["model_name"] == "":
+                        entity_dict["euler_rotation"] = read_vector(rmesh_stream)
+                        entity_dict["scale"] = read_vector(rmesh_stream)
 
             elif entity_dict["entity_type"] == "mesh":
                 entity_dict["position"] = read_vector(rmesh_stream)
@@ -286,6 +295,62 @@ def read_rmesh(file_path, file_type):
                     entity_dict["start_open"] = read_byte(rmesh_stream)
                     entity_dict["allow_scp_079_remote_control"] = read_byte(rmesh_stream)
 
+            elif entity_dict["entity_type"] == "fusebox" or entity_dict["entity_type"] == "generator":
+                entity_dict["model_name"] = read_string(rmesh_stream)
+                if entity_dict["entity_type"] == "generator":
+                    entity_dict["sfx"] = read_integer(rmesh_stream)
+                    entity_dict["sfx_range"] = read_float(rmesh_stream)
+                    entity_dict["id"] = read_integer(rmesh_stream)
+
+                entity_dict["position"] = read_vector(rmesh_stream)
+                entity_dict["euler_rotation"] = read_vector(rmesh_stream)
+                entity_dict["scale"] = read_vector(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "button_gen" or entity_dict["entity_type"] == "lever_gen":
+                entity_dict["model_name"] = read_string(rmesh_stream)
+                if entity_dict["entity_type"] == "lever_gen":
+                    entity_dict["handle_model"] = read_string(rmesh_stream)
+                    entity_dict["angle"] = read_integer(rmesh_stream)
+
+                entity_dict["id"] = read_integer(rmesh_stream)
+
+                entity_dict["position"] = read_vector(rmesh_stream)
+                entity_dict["euler_rotation"] = read_vector(rmesh_stream)
+                entity_dict["scale"] = read_vector(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "particle_gen":
+                entity_dict["position"] = read_vector(rmesh_stream)
+
+                entity_dict["particle_type"] = read_byte(rmesh_stream)
+                entity_dict["angles"] = read_string(rmesh_stream)
+                entity_dict["id"] = read_integer(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "mp_damageboss_radius":
+                entity_dict["position"] = read_vector(rmesh_stream)
+
+                entity_dict["range"] = read_float(rmesh_stream)
+                entity_dict["id"] = read_integer(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "mp_playerspawn":
+                entity_dict["position"] = read_vector(rmesh_stream)
+                entity_dict["team"] = read_byte(rmesh_stream)
+                entity_dict["yaw"] = read_float(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "mp_enemyspawn":
+                entity_dict["position"] = read_vector(rmesh_stream)
+                entity_dict["enemy_string"] = read_string(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "mp_itemspawn":
+                entity_dict["position"] = read_vector(rmesh_stream)
+                entity_dict["item_type"] = read_byte(rmesh_stream)
+                entity_dict["respawn_time"] = read_integer(rmesh_stream)
+                entity_dict["random_time"] = read_string(rmesh_stream)
+
+            elif entity_dict["entity_type"] == "flu_light":
+                entity_dict["position"] = read_vector(rmesh_stream)
+                entity_dict["euler_rotation"] = read_vector(rmesh_stream)
+                entity_dict["id"] = read_integer(rmesh_stream)
+
             else:
                 print("Unknown entity type: %s" % entity_dict["entity_type"])
 
@@ -320,8 +385,9 @@ def write_mesh_data(rmesh_stream, file_type, section_dict, is_coll=False):
 
 def write_rmesh(rmesh_dict, output_path, file_type):
     with output_path.open("wb") as rmesh_stream:
-        if rmesh_dict["rmesh_file_type"] != "RoomMesh" and rmesh_dict["rmesh_file_type"] != "RoomMesh.HasTriggerBox" and rmesh_dict["rmesh_file_type"] != "RoomMesh2" and rmesh_dict["rmesh_file_type"] != "RM":
-            raise ValueError('Input file was "%s" instead of "RoomMesh", "RoomMesh.HasTriggerBox", "RoomMesh2", or RM and therefore is not an RMESH file' % rmesh_dict["rmesh_file_type"])
+        rmesh_types = ("RoomMesh", "RoomMesh.HasTriggerBox", "RoomMesh.HasNoColl", "RoomMesh2", "RM")
+        if not rmesh_dict["rmesh_file_type"] in rmesh_types:
+            raise ValueError('Input file was "%s" instead of "RoomMesh", "RoomMesh.HasTriggerBox", "RoomMesh.HasNoColl", "RoomMesh2", or RM and therefore is not an RMESH file' % rmesh_dict["rmesh_file_type"])
 
         write_string(rmesh_stream, rmesh_dict["rmesh_file_type"])
         if file_type == ExportFileType.rmesh_salvage:
@@ -332,6 +398,9 @@ def write_rmesh(rmesh_dict, output_path, file_type):
             write_mesh_data(rmesh_stream, file_type, rmesh_dict["render_meshes"])
 
         write_mesh_data(rmesh_stream, file_type, rmesh_dict["collision_meshes"], True)
+        if file_type == ExportFileType.rmesh_nc:
+            write_mesh_data(rmesh_stream, file_type, rmesh_dict["render_meshes"])
+
         if file_type == ExportFileType.rmesh_tb or file_type == ExportFileType.rmesh_salvage:
             write_integer(rmesh_stream, len(rmesh_dict["trigger_boxes"]))
             for trigger_box_dict in rmesh_dict["trigger_boxes"]:
@@ -415,8 +484,9 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                 write_string(rmesh_stream, entity_dict["model_name"])
                 if not file_type == ExportFileType.rmesh_uer:
                     write_vector(rmesh_stream, entity_dict["position"])
-                    write_vector(rmesh_stream, entity_dict["euler_rotation"])
-                    write_vector(rmesh_stream, entity_dict["scale"])
+                    if not entity_dict["model_name"] == "":
+                        write_vector(rmesh_stream, entity_dict["euler_rotation"])
+                        write_vector(rmesh_stream, entity_dict["scale"])
 
             elif entity_dict["entity_type"] == "mesh":
                 write_vector(rmesh_stream, entity_dict["position"])
@@ -444,7 +514,7 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                 write_integer(rmesh_stream, entity_dict["door_type"])
                 if file_type == ExportFileType.rmesh_salvage and rmesh_dict["rmesh_version"] >= 1:
                     write_integer(rmesh_stream, entity_dict["door_identifier"])
-                    
+
                 write_integer(rmesh_stream, entity_dict["key_card_level"])
                 write_string(rmesh_stream, entity_dict["keypad_code"])
                 write_float(rmesh_stream, entity_dict["angle"])
@@ -460,6 +530,62 @@ def write_rmesh(rmesh_dict, output_path, file_type):
 
                 else:
                     write_byte(rmesh_stream, entity_dict["allow_scp_079_remote_control"])
+
+            elif entity_dict["entity_type"] == "fusebox" or entity_dict["entity_type"] == "generator":
+                write_string(rmesh_stream, entity_dict["model_name"])
+                if entity_dict["entity_type"] == "generator":
+                    write_integer(rmesh_stream, entity_dict["sfx"])
+                    write_float(rmesh_stream, entity_dict["sfx_range"])
+                    write_integer(rmesh_stream, entity_dict["id"])
+
+                write_vector(rmesh_stream, entity_dict["position"])
+                write_vector(rmesh_stream, entity_dict["euler_rotation"])
+                write_vector(rmesh_stream, entity_dict["scale"])
+
+            elif entity_dict["entity_type"] == "button_gen" or entity_dict["entity_type"] == "lever_gen":
+                write_string(rmesh_stream, entity_dict["model_name"])
+                if entity_dict["entity_type"] == "lever_gen":
+                    write_string(rmesh_stream, entity_dict["handle_model"])
+                    write_integer(rmesh_stream, entity_dict["angle"])
+
+                write_integer(rmesh_stream, entity_dict["id"])
+
+                write_vector(rmesh_stream, entity_dict["position"])
+                write_vector(rmesh_stream, entity_dict["euler_rotation"])
+                write_vector(rmesh_stream, entity_dict["scale"])
+
+            elif entity_dict["entity_type"] == "particle_gen":
+                write_vector(rmesh_stream, entity_dict["position"])
+
+                write_byte(rmesh_stream, entity_dict["particle_type"])
+                write_string(rmesh_stream, entity_dict["angles"])
+                write_integer(rmesh_stream, entity_dict["id"])
+
+            elif entity_dict["entity_type"] == "mp_damageboss_radius":
+                write_vector(rmesh_stream, entity_dict["position"])
+
+                write_float(rmesh_stream, entity_dict["range"])
+                write_integer(rmesh_stream, entity_dict["id"])
+
+            elif entity_dict["entity_type"] == "mp_playerspawn":
+                write_vector(rmesh_stream, entity_dict["position"])
+                write_byte(rmesh_stream, entity_dict["team"])
+                write_float(rmesh_stream, entity_dict["yaw"])
+
+            elif entity_dict["entity_type"] == "mp_enemyspawn":
+                write_vector(rmesh_stream, entity_dict["position"])
+                write_string(rmesh_stream, entity_dict["enemy_string"])
+
+            elif entity_dict["entity_type"] == "mp_itemspawn":
+                write_vector(rmesh_stream, entity_dict["position"])
+                write_byte(rmesh_stream, entity_dict["item_type"])
+                write_integer(rmesh_stream, entity_dict["respawn_time"])
+                write_string(rmesh_stream, entity_dict["random_time"])
+
+            elif entity_dict["entity_type"] == "flu_light":
+                write_vector(rmesh_stream, entity_dict["position"])
+                write_vector(rmesh_stream, entity_dict["euler_rotation"])
+                write_integer(rmesh_stream, entity_dict["id"])
 
             else:
                 print("Unknown entity type: %s" % entity_dict["entity_type"])

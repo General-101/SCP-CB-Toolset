@@ -432,29 +432,29 @@ def run_bake(context, lightmap_ob, generate_vertex_colors=False, render_name="uv
             lightmap_ob.data.attributes.render_color_index = 0
 
         uv_layers[render_name].active_render = True
-        uv_layers[render_name].active = True 
+        uv_layers[render_name].active = True
         target_name = 'VERTEX_COLORS'
         bake_layer = render_name
     else:
         uv_layers[render_name].active_render = True
-        uv_layers[lightmap_name].active = True 
+        uv_layers[lightmap_name].active = True
         target_name = 'IMAGE_TEXTURES'
         bake_layer = lightmap_name
 
     bpy.context.view_layer.update()
     context.scene.render.engine = 'CYCLES'
-    
+
     bpy.ops.object.bake(
         type='DIFFUSE',
-        pass_filter={'DIRECT','INDIRECT'}, 
+        pass_filter={'DIRECT','INDIRECT'},
         margin=context.scene.render.bake.margin,
-        margin_type=context.scene.render.bake.margin_type, 
+        margin_type=context.scene.render.bake.margin_type,
         use_clear=True,
         use_selected_to_active=False,
         target=target_name,
         uv_layer=bake_layer
     )
-    
+
     lightmap_ob.select_set(False)
     context.view_layer.objects.active = None
 
@@ -494,9 +494,9 @@ def bake_lightmaps(context):
         if output_material_node is not None:
             node_group = get_linked_node(output_material_node, "Surface", "GROUP")
             if node_group and node_group.node_tree.name in SHADER_NODE_NAMES:
-                material_settings[mat.name] = {"is_fullbright": node_group.inputs["Is Fullbright"].default_value, 
-                                            "use_shine": node_group.inputs["Use Shine"].default_value, 
-                                            "use_specular_mask": node_group.inputs["Use Specular Mask"].default_value, 
+                material_settings[mat.name] = {"is_fullbright": node_group.inputs["Is Fullbright"].default_value,
+                                            "use_shine": node_group.inputs["Use Shine"].default_value,
+                                            "use_specular_mask": node_group.inputs["Use Specular Mask"].default_value,
                                             "use_normal": node_group.inputs["Use Normal"].default_value}
 
                 node_group.inputs["Is Fullbright"].default_value = True

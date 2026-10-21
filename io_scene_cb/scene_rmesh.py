@@ -254,7 +254,7 @@ def gather_mesh_data(ob, depsgraph, section_data, file_type, use_lightmap_name_o
         section_name = ob.name
         if not is_collision:
             mat_name = get_material_name(ob, tri)
-            
+
             section_dict = {"textures": [], "vertices": [], "triangles": [], "vertex_map": {}}
             lightmap_texture_dict = {"texture_type": 0, "texture_name": ""}
             diffuse_texture_dict = {"texture_type": 0, "texture_name": ""}
@@ -315,7 +315,7 @@ def gather_mesh_data(ob, depsgraph, section_data, file_type, use_lightmap_name_o
                                     lightmap_texture_dict["texture_name"] = filename
                                     if use_lightmap_name_override and not is_string_empty(ob.cb.lightmap_name_override):
                                         lightmap_texture_dict["texture_name"] = "%s.png" % ob.cb.lightmap_name_override
-                                    
+
                                     lightmap_name = lightmap_texture_dict["texture_name"]
                                     break
                             elif img.source == 'GENERATED':
@@ -730,7 +730,7 @@ def generate_mesh_data(mesh_dict, mesh_data, mesh_idx, local_asset_path, random_
             bsdf_node.name = "Principled BSDF"
             bsdf_node.location = (-440.0, 0.0)
             connect_inputs(mat.node_tree, bsdf_node, "BSDF", output_material_node, "Surface")
-            
+
             shader_input_node = bsdf_node
             shader_color_input = "Base Color"
             shader_alpha_input = "Alpha"
@@ -887,7 +887,7 @@ def generate_mesh_data(mesh_dict, mesh_data, mesh_idx, local_asset_path, random_
 
     return mesh
 
-def import_scene(context, filepath, file_type, fullbright_materials, use_light_radius, use_game_rules, split_by_material, import_meshes, import_collisions, 
+def import_scene(context, filepath, file_type, fullbright_materials, use_light_radius, use_game_rules, split_by_material, import_meshes, import_collisions,
                  import_trigger_boxes, import_entities, report):
     file_type, rmesh_dict = read_rmesh(filepath, ImportFileType(int(file_type)))
 
@@ -974,7 +974,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
             object_mesh.data.attributes.active_color_name = "color"
             object_mesh.data.attributes.render_color_index = 0
 
-    if file_type == ImportFileType.rmesh_salvage:
+    if file_type == ImportFileType.rmesh_salvage or file_type == ImportFileType.rmesh_nc:
         has_render_data = False
         for render_dict in rmesh_dict["render_meshes"]:
             if len(render_dict["vertices"]) > 0:
@@ -1204,7 +1204,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 scl = Vector((1, 1, 1))
                 object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
-            elif entity_dict["entity_type"] == "model" or entity_dict["entity_type"] == "mesh":
+            elif entity_dict["entity_type"] == "model" or entity_dict["entity_type"] == "mesh" or entity_dict["entity_type"] == "model_nocoll"or entity_dict["entity_type"] == "fusebox"or entity_dict["entity_type"] == "generator":
                 is_uer_prop = False
                 if entity_dict["entity_type"] == "mesh":
                     is_uer_prop = True

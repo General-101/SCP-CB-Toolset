@@ -50,7 +50,7 @@ def get_enum_items(self, context):
 def load_sound_emitters(self=None, context=None):
     global enum_items_cache
     enum_items_cache = []
-    
+
     if self is not None:
         game_path = Path(self.game_path)
     else:
@@ -185,7 +185,7 @@ class CBObjectPropertiesGroup(PropertyGroup):
         description = "Use vertex colors for this object. Otherwise we bake to a texture",
         default = False,
         )
-    
+
     lightmap_name_override: StringProperty(
             name = "Lightmap Name Override",
             description="Replaces the name used for the lightmap entry at export time if a texture node is connected to the lightmap slot. Useful for instances with multiple materials",
@@ -197,7 +197,7 @@ class CBObjectPropertiesGroup(PropertyGroup):
         description = "Object uses the UER variant. Displays UER options in Blender panels if enabled",
         default = False,
         )
-    
+
     is_light_fix: BoolProperty(
         name ="Is light fix variant",
         description = "Object uses the UER light fix variant. Designed to fix per vertex lighting on entities not working properly",
@@ -380,7 +380,7 @@ class CB_OT_DisconnectLightmaps(Operator):
     def execute(self, context):
         disconnect_lightmaps()
         return {'FINISHED'}
-    
+
 class CB_OT_BakeLightmaps(Operator):
     bl_idname = "cb.bake_lms"
     bl_label = "Bake Light Maps"
@@ -739,9 +739,10 @@ class ExportRMESH(Operator, ExportHelper):
         name="File Type:",
         description="What game was the model file made for",
         items=[ ('0', "RMESH", "Export an RMESH intended for the original SCP CB"),
-                ('2', "RMESH UER", "Export an RMESH intended for SCP CB UER 1.5.6"),
-                ('3', "RMESH UER 2", "Export an RMESH intended for SCP CB UER 2.0"),
-                ('4', "RM", "Export an RMESH intended for the Salvage SCP CB fork")
+                ('2', "RMESH No Collision", "Export an RMESH intended for SCP Nine Tailed Fox mod"),
+                ('3', "RMESH UER", "Export an RMESH intended for SCP CB UER 1.5.6"),
+                ('4', "RMESH UER 2", "Export an RMESH intended for SCP CB UER 2.0"),
+                ('5', "RM", "Export an RMESH intended for the Salvage SCP CB fork")
             ]
         )
 
@@ -779,9 +780,10 @@ class ImportRMESH(Operator, ImportHelper):
         items=[ ('0', "Auto", "Attempt to automatically get the correct file type. May cause problems if the app is trying to guess between UER and release files."),
                 ('1', "RMESH", "Import an RMESH intended for the original SCP CB"),
                 ('2', "RMESH Trigger Box", "Import an RMESH intended for the original SCP CB"),
-                ('3', "RMESH UER", "Import an RMESH intended for SCP CB UER 1.5.6"),
-                ('4', "RMESH UER 2", "Import an RMESH intended for SCP CB UER 2.0"),
-                ('5', "RM", "Import an RMESH intended for the Salvage SCP CB fork"),
+                ('3', "RMESH No Collision", "Import an RMESH intended for the SCP Nine Tailed Fox mod"),
+                ('4', "RMESH UER", "Import an RMESH intended for SCP CB UER 1.5.6"),
+                ('5', "RMESH UER 2", "Import an RMESH intended for SCP CB UER 2.0"),
+                ('6', "RM", "Import an RMESH intended for the Salvage SCP CB fork"),
             ]
         )
 
@@ -868,7 +870,7 @@ class ImportRMESH(Operator, ImportHelper):
     def execute(self, context):
         from . import scene_rmesh
 
-        return scene_rmesh.import_scene(context, Path(self.filepath), self.file_type, self.fullbright_materials, self.use_light_radius, self.use_game_rules, 
+        return scene_rmesh.import_scene(context, Path(self.filepath), self.file_type, self.fullbright_materials, self.use_light_radius, self.use_game_rules,
                                         self.split_by_material, self.import_meshes, self.import_collisions, self.import_trigger_boxes, self.import_entities, self.report)
 
     if (4, 1, 0) <= bpy.app.version:
@@ -1116,7 +1118,7 @@ if (4, 1, 0) <= bpy.app.version:
         @classmethod
         def poll_drop(cls, context):
             return (context.area and context.area.type == 'VIEW_3D')
-        
+
     class Import3DW_FileHandler(FileHandler):
         bl_idname = "EDW_FH_import"
         bl_label = "File handler for 3DW import"

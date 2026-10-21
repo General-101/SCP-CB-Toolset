@@ -173,7 +173,7 @@ def read_3dw(file_path):
                     x_scale = read_float(_3dw_stream)
                     y_scale = read_float(_3dw_stream)
                     z_scale = read_float(_3dw_stream)
-                
+
                 entity["properties"]["scale"] = (x_scale, y_scale, z_scale)
 
                 mesh_dict = _3dw_dict["mesh_references"].get(mesh_reference_index)

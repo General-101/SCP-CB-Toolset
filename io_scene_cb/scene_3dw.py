@@ -74,7 +74,7 @@ def import_node_recursive(context, data, node, use_light_radius, random_color_ge
         object_mesh.cb.linear_falloff = float(node["properties"].get("linearfalloff", 0))
 
         light_rotation = Quaternion()
-        light_angles = node["properties"].get("angles") 
+        light_angles = node["properties"].get("angles")
         if light_angles is not None:
             x, y, z = light_angles.split(" ")
             light_rotation = Euler((radians(float(x)), radians(float(y)), radians(float(z))), 'XYZ').to_quaternion()
@@ -104,7 +104,7 @@ def import_scene(context, filepath, use_light_radius, report):
 
     for terrain_node in data["terrain"]:
         resolution = terrain_node["resolution"] + 1
-        size = resolution 
+        size = resolution
 
         width = terrain_node["width"]
         height = terrain_node["height"]
@@ -122,7 +122,7 @@ def import_scene(context, filepath, use_light_radius, report):
             for x in range(size):
                 z = heights[index]
                 index += 1
-                
+
                 vertices.append((x, y, z))
 
         mesh = bpy.data.meshes.new(terrain_node["object_name"])
