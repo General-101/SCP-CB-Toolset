@@ -3,8 +3,9 @@ import bpy
 import ntpath
 
 from pathlib import Path
-from mathutils import Matrix, Vector, Quaternion
 from .process_x import write_x, read_x
+from .scale_helpers import get_ingame_scale
+from mathutils import Matrix, Vector, Quaternion
 from .common_functions import (RandomColorGenerator,
                                MaterialType,
                                get_file,
@@ -15,7 +16,6 @@ from .common_functions import (RandomColorGenerator,
                                connect_inputs,
                                clean_string,
                                generate_texture_mapping,
-                               get_ingame_scale,
                                SHADER_NODE_NAMES)
 
 def generate_materials(materials_dict, random_color_gen, mesh, is_simple, ob_data, local_asset_path, error_log, material_type_enum, material_list=None):

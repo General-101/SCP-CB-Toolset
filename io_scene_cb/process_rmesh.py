@@ -1,20 +1,39 @@
 from enum import Enum, auto
-from .common_functions import (read_string,
-                               write_string,
-                               read_integer,
-                               write_integer,
-                               read_byte,
-                               write_byte,
-                               read_float,
-                               write_float,
-                               read_vector,
-                               write_vector,
-                               read_2d_vector,
-                               write_2d_vector,
-                               read_uv,
-                               write_uv,
-                               read_color,
-                               write_color)
+try:
+    from .common_functions import (read_string,
+                                write_string,
+                                read_integer,
+                                write_integer,
+                                read_byte,
+                                write_byte,
+                                read_float,
+                                write_float,
+                                read_vector,
+                                write_vector,
+                                read_2d_vector,
+                                write_2d_vector,
+                                read_uv,
+                                write_uv,
+                                read_color,
+                                write_color)
+
+except ImportError:
+    from common_functions import (read_string,
+                                write_string,
+                                read_integer,
+                                write_integer,
+                                read_byte,
+                                write_byte,
+                                read_float,
+                                write_float,
+                                read_vector,
+                                write_vector,
+                                read_2d_vector,
+                                write_2d_vector,
+                                read_uv,
+                                write_uv,
+                                read_color,
+                                write_color)
 
 class ImportFileType(Enum):
     rmesh_auto = 0
@@ -437,7 +456,6 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                     for ff_element in entity_dict["ff_array"]:
                         write_integer(rmesh_stream, ff_element)
 
-
             elif entity_dict["entity_type"] == "light_fix":
                 if file_type == ExportFileType.rmesh_uer2:
                     write_vector(rmesh_stream, entity_dict["position"])
@@ -480,7 +498,7 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                 write_integer(rmesh_stream, entity_dict["id"])
                 write_float(rmesh_stream, entity_dict["range"])
 
-            elif entity_dict["entity_type"] == "model":
+            elif entity_dict["entity_type"] == "model" or entity_dict["entity_type"] == "model_nocoll":
                 write_string(rmesh_stream, entity_dict["model_name"])
                 if not file_type == ExportFileType.rmesh_uer:
                     write_vector(rmesh_stream, entity_dict["position"])
@@ -590,5 +608,5 @@ def write_rmesh(rmesh_dict, output_path, file_type):
             else:
                 print("Unknown entity type: %s" % entity_dict["entity_type"])
 
-        if file_type == ExportFileType.rmesh or file_type == ExportFileType.rmesh_tb:
+        if file_type == ExportFileType.rmesh or file_type == ExportFileType.rmesh_tb or ExportFileType.rmesh_nc:
             write_string(rmesh_stream, "EOF")

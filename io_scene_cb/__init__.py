@@ -112,6 +112,24 @@ def set_sound_emitter_id(self, value):
 
     self["sound_emitter_id_ui"] = value
 
+def get_generator_sfx(self):
+    enum_index = self.get("generator_sfx", 0)
+
+    global enum_items_cache
+    item_count = len(enum_items_cache)
+    if enum_index >= item_count:
+        enum_index = item_count - 1
+
+    return enum_index
+
+def set_generator_sfx(self, value):
+    global enum_items_cache
+    item_count = len(enum_items_cache)
+    if value != item_count:
+        self["generator_sfx"] = value
+
+    self["generator_sfx_ui"] = value
+
 class SCPCBAddonPrefs(AddonPreferences):
     bl_idname = __name__
     game_path: StringProperty(
@@ -177,6 +195,17 @@ class CBObjectPropertiesGroup(PropertyGroup):
                     ('10', "Entity Model", "Object is valid for CB/CB-S/UER/UER2"),
                     ('11', "Entity Item", "Object is valid for CB-S"),
                     ('12', "Entity Door", "Object is valid for CB-S"),
+                    ('13', "Entity Model No Collision", "Object is valid for NTF"),
+                    ('14', "Entity Fusebox", "Object is valid for NTF"),
+                    ('15', "Entity Generator", "Object is valid for NTF"),
+                    ('16', "Entity Button Generator", "Object is valid for NTF"),
+                    ('17', "Entity Lever Generator", "Object is valid for NTF"),
+                    ('18', "Entity Particle Generator", "Object is valid for NTF"),
+                    ('19', "Entity MP Damage Boss Radius", "Object is valid for NTF"),
+                    ('20', "Entity MP Player Spawn", "Object is valid for NTF"),
+                    ('21', "Entity MP Enemy Spawn", "Object is valid for NTF"),
+                    ('22', "Entity MP Item Spawn", "Object is valid for NTF"),
+                    ('23', "Entity Fluorescent Light", "Object is valid for NTF")
                 )
         )
 
@@ -361,6 +390,126 @@ class CBObjectPropertiesGroup(PropertyGroup):
         min=-1,
         max=8,
         default=-1
+        )
+
+    generator_sfx: IntProperty(
+        name = "SFX",
+        description = "???"
+        )
+
+    generator_sfx_ui: EnumProperty(
+        name="",
+        description = "Id of the sound we are using",
+        items=get_enum_items,
+        get=get_generator_sfx,
+        set=set_generator_sfx
+    )
+
+    generator_sfx_range: FloatProperty(
+        name = "SFX",
+        description = "???"
+        )
+
+    generator_id: IntProperty(
+        name = "Id",
+        description = "???"
+        )
+
+    handle_model_path: StringProperty(
+            name = "Handle Model",
+            description="Model to use for this entity",
+            default="",
+            maxlen=1024,
+            subtype='FILE_PATH'
+    )
+
+    button_id: IntProperty(
+        name = "Id",
+        description = "???"
+        )
+
+    lever_id: IntProperty(
+        name = "Id",
+        description = "???"
+        )
+
+    particle_type: EnumProperty(
+        name="Type",
+        description="What type of particle is this entity using",
+        items = ( ('0', "Water", "Sprinkler"),
+                    ('1', "Electric", "Broken wire")
+                )
+        )
+
+    particle_id: IntProperty(
+        name = "Id",
+        description = "???"
+        )
+
+    damage_boss_id: IntProperty(
+        name = "Id",
+        description = "???"
+        )
+
+    player_spawn_team: EnumProperty(
+        name="Team",
+        description="What team is this spawner for",
+        items = ( ('0', "Unknown", "Unknown"),
+                    ('1', "Mobile Task Force", "Mobile Task Force"),
+                    ('1', "Chaos Insurgency", "Chaos Insurgency")
+                )
+        )
+
+    scp_008_1_valid: BoolProperty(
+        name ="Spawns SCP 008-1",
+        description = "Spawns SCP 008-1. This will also be used to spawn bosses when the final wave is hit",
+        default = False,
+        )
+
+    scp_939_valid: BoolProperty(
+        name ="Spawns SCP 939",
+        description = "Spawns SCP 939",
+        default = False,
+        )
+
+    scp_1048_a_valid: BoolProperty(
+        name ="Spawns SCP 1048-a",
+        description = "Spawns SCP 1048-a",
+        default = False,
+        )
+
+    item_type: EnumProperty(
+        name="Item Type",
+        description="What enemy is this spawner for",
+        items = ( ('0', "Gun", "Gun"),
+                    ('1', "Health", "Health"),
+                    ('2', "Kevlar", "Kevlar"),
+                    ('3', "Ammo", "Ammo")
+                )
+        )
+
+    respawn_time: IntProperty(
+        name = "Respawn Time",
+        description = "???"
+        )
+
+    random_time_min: IntProperty(
+        name = "Random Time Min",
+        description = "???"
+        )
+
+    random_time_max: IntProperty(
+        name = "Random Time Max",
+        description = "???"
+        )
+
+    flu_light_state: EnumProperty(
+        name="Fluorescent Light State",
+        description="How the light should behave ingame",
+        items = ( ('0', "Off", "Off"),
+                    ('1', "On", "On"),
+                    ('2', "Flicker", "Flicker")
+                )
         )
 
 class CB_OT_ConnectLightmaps(Operator):
@@ -659,6 +808,134 @@ def render_entity_door(context, layout, active_property):
     row.label(text='Button B:')
     row.prop(active_property, "button_b_ob", text='')
 
+def render_entity_model_no_collision(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.operator("cb.update_ob")
+    row = col.row()
+    row.label(text='Model Path:')
+    row.prop(active_property, "model_path", text='')
+
+def render_entity_fusebox(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.operator("cb.update_ob")
+    row = col.row()
+    row.label(text='Model Path:')
+    row.prop(active_property, "model_path", text='')
+
+def render_entity_generator(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.operator("cb.update_ob")
+    row = col.row()
+    row.operator("cb.gather_sound_ids")
+    row = col.row()
+    row.label(text='Model Path:')
+    row.prop(active_property, "model_path", text='')
+    row = col.row()
+    row.label(text='SFX:')
+    row.prop(active_property, "generator_sfx_ui", text='')
+    if active_property.generator_sfx_ui == "CUSTOM":
+        row = col.row()
+        row.label(text='SFX Value:')
+        row.prop(active_property, "generator_sfx")
+
+    row = col.row()
+    row.label(text='SFX Range:')
+    row.prop(active_property, "generator_sfx_range", text='')
+    row = col.row()
+    row.label(text='Id:')
+    row.prop(active_property, "generator_id", text='')
+
+def render_entity_button_generator(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.operator("cb.update_ob")
+    row = col.row()
+    row.label(text='Model Path:')
+    row.prop(active_property, "model_path", text='')
+    row = col.row()
+    row.label(text='Id:')
+    row.prop(active_property, "button_id", text='')
+
+def render_entity_lever_generator(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.operator("cb.update_ob")
+    row = col.row()
+    row.label(text='Model Path:')
+    row.prop(active_property, "model_path", text='')
+    row = col.row()
+    row.label(text='Handle Model Path:')
+    row.prop(active_property, "handle_model_path", text='')
+    row = col.row()
+    row.label(text='Id:')
+    row.prop(active_property, "lever_id", text='')
+
+def render_entity_particle_generator(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.label(text='Type:')
+    row.prop(active_property, "particle_type", text='')
+    row = col.row()
+    row.label(text='Id:')
+    row.prop(active_property, "particle_id", text='')
+
+def render_entity_mp_damageboss_radius(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.label(text='Id:')
+    row.prop(active_property, "damage_boss_id", text='')
+
+def render_entity_mp_playerspawn(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.label(text='Team:')
+    row.prop(active_property, "player_spawn_team", text='')
+
+def render_entity_mp_enemyspawn(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.label(text='Spawn SCP-008-1:')
+    row.prop(active_property, "scp_008_1_valid", text='')
+    row = col.row()
+    row.label(text='Spawn SCP-939:')
+    row.prop(active_property, "scp_939_valid", text='')
+    row = col.row()
+    row.label(text='Spawn SCP-1048-a:')
+    row.prop(active_property, "scp_1048_a_valid", text='')
+
+def render_entity_mp_itemspawn(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.label(text='Item Type:')
+    row.prop(active_property, "item_type", text='')
+    row = col.row()
+    row.label(text='Respawn Time:')
+    row.prop(active_property, "respawn_time", text='')
+    row = col.row()
+    row.label(text='Random Time Bounds:')
+    row.prop(active_property, "random_time_min", text='')
+    row.prop(active_property, "random_time_max", text='')
+
+def render_entity_flu_light(context, layout, active_property):
+    box = layout.split()
+    col = box.column(align=True)
+    row = col.row()
+    row.label(text='Fluorescent Light State:')
+    row.prop(active_property, "flu_light_state", text='')
+
 class CB_OT_UpdateOb(Operator):
     bl_idname = "cb.update_ob"
     bl_label = "Update Object"
@@ -715,6 +992,28 @@ class CB_ObjectProps(Panel):
             render_entity_item(context, layout, ob_cb)
         elif object_type == ObjectType.entity_door:
             render_entity_door(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_model_no_collision:
+            render_entity_model_no_collision(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_fusebox:
+            render_entity_fusebox(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_generator:
+            render_entity_generator(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_button_generator:
+            render_entity_button_generator(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_lever_generator:
+            render_entity_lever_generator(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_particle_generator:
+            render_entity_particle_generator(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_mp_damage_boss_radius:
+            render_entity_mp_damageboss_radius(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_mp_player_spawn:
+            render_entity_mp_playerspawn(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_mp_enemy_spawn:
+            render_entity_mp_enemyspawn(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_mp_item_spawn:
+            render_entity_mp_itemspawn(context, layout, ob_cb)
+        elif object_type == ObjectType.entity_fluorescent_light:
+            render_entity_flu_light(context, layout, ob_cb)
 
 class CBRMAT_OT_CBShader(Operator):
     bl_idname = "node.cb_material"

@@ -906,6 +906,8 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
     if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2:
         local_prop_path = os.path.join("GFX", "Map", "Props")
         local_screen_path = os.path.join("GFX", "Map", "Screens")
+    elif file_type == ImportFileType.rmesh_nc:
+        local_prop_path = os.path.join("GFX", "map", "props")
 
     if not is_string_empty(str(game_path)) and str(filepath).startswith(str(game_path)):
         local_asset_path = os.path.dirname(os.path.relpath(str(filepath), str(game_path)))
@@ -1204,12 +1206,13 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 scl = Vector((1, 1, 1))
                 object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
-            elif entity_dict["entity_type"] == "model" or entity_dict["entity_type"] == "mesh" or entity_dict["entity_type"] == "model_nocoll"or entity_dict["entity_type"] == "fusebox"or entity_dict["entity_type"] == "generator":
+            elif entity_dict["entity_type"] == "model" or entity_dict["entity_type"] == "mesh" or entity_dict["entity_type"] == "model_nocoll" or entity_dict["entity_type"] == "fusebox" or entity_dict["entity_type"] == "generator" or entity_dict["entity_type"] == "button_gen" or entity_dict["entity_type"] == "lever_gen":
                 is_uer_prop = False
                 if entity_dict["entity_type"] == "mesh":
                     is_uer_prop = True
 
-                if not is_uer_prop and use_game_rules and entity_dict["model_name"] == "":
+                game_rules_check = ("model", "mesh", "model_nocoll")
+                if not is_uer_prop and use_game_rules and entity_dict["model_name"] == "" and entity_dict["entity_type"] in game_rules_check:
                     continue
 
                 model_path = get_file(entity_dict["model_name"], False, directory_path=local_prop_path)
@@ -1238,7 +1241,53 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 if is_uer_prop:
                     object_mesh.cb.is_uer = True
 
-                object_mesh.cb.object_type = str(ObjectType.entity_model.value)
+                if entity_dict["entity_type"] == "model_nocoll":
+                    object_mesh.cb.object_type = str(ObjectType.entity_model_no_collision.value)
+                elif entity_dict["entity_type"] == "fusebox":
+                    object_mesh.cb.object_type = str(ObjectType.entity_fusebox.value)
+                elif entity_dict["entity_type"] == "generator":
+                    object_mesh.cb.object_type = str(ObjectType.entity_generator.value)
+                    object_mesh.cb.generator_sfx = entity_dict["sfx"]
+                    object_mesh.cb.generator_sfx_range = entity_dict["sfx_range"]
+                    object_mesh.cb.generator_id = entity_dict["id"]
+                elif entity_dict["entity_type"] == "button_gen":
+                    object_mesh.cb.object_type = str(ObjectType.entity_button_generator.value)
+                    object_mesh.cb.button_id = entity_dict["id"]
+                elif entity_dict["entity_type"] == "lever_gen":
+                    object_mesh.cb.object_type = str(ObjectType.entity_lever_generator.value)
+                    object_mesh.cb.lever_id = entity_dict["id"]
+
+                    handle_model_path = get_file(entity_dict["handle_model"], False, directory_path=local_prop_path)
+
+                    lever_ob_data = entity_meshes.get(handle_model_path)
+                    if lever_ob_data is None and handle_model_path:
+                        lever_ob_data = entity_meshes[handle_model_path] = bpy.data.meshes.new("%s model" % entity_idx)
+                        bm = bmesh.new()
+                        is_simple=True
+                        if handle_model_path.lower().endswith(".b3d"):
+                            import_b3d(context, Path(handle_model_path), fullbright_materials, use_light_radius, "0", True, report, bm, lever_ob_data, is_simple, error_log, random_color_gen)
+
+                        else:
+                            import_x(context, Path(handle_model_path), True, report, bm, lever_ob_data, is_simple, error_log, random_color_gen)
+
+                        bm.to_mesh(lever_ob_data)
+                        bm.free()
+
+                    lever_object_mesh = bpy.data.objects.new("%s %s" % (entity_idx, entity_dict["entity_type"]), lever_ob_data)
+                    if lever_ob_data is None:
+                        lever_object_mesh.empty_display_size = room_scale * 1
+
+                    loc = Vector((0.0, 0.0, 0.0))
+                    rot = Euler((0, radians(entity_dict["angle"]), 0))
+                    scl = Vector((1.0, 1.0, 1.0))
+                    lever_object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
+                    print(handle_model_path)
+                    if handle_model_path is not None:
+                        object_mesh.cb.handle_model_path = handle_model_path
+
+                else:
+                    object_mesh.cb.object_type = str(ObjectType.entity_model.value)
+
                 if model_path is not None:
                     object_mesh.cb.model_path = model_path
 
@@ -1246,6 +1295,10 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     object_mesh.cb.texture_path = texture_path
 
                 entity_collection.objects.link(object_mesh)
+                if entity_dict["entity_type"] == "lever_gen":
+                    entity_collection.objects.link(lever_object_mesh)
+                    lever_object_mesh.parent = object_mesh
+
                 has_position_data = True
                 if entity_dict["entity_type"] == "model" and (file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2):
                     has_position_data = False
@@ -1361,6 +1414,118 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     loc_result = room_scale * Vector(flip(entity_dict["button_2_position"]))
                     rot = get_blender_rot(entity_dict["button_2_angle"])
                     button_b_ob.matrix_local = button_b_ob.matrix_local @ Matrix.LocRotScale(loc_result, rot, Vector((1, 1, 1)))
+
+            elif entity_dict["entity_type"] == "particle_gen":
+                object_mesh = bpy.data.objects.new("%s particle_gen" % entity_idx, None)
+                object_mesh.empty_display_size = room_scale * 80
+                object_mesh.cb.object_type = str(ObjectType.entity_particle_generator.value)
+                entity_collection.objects.link(object_mesh)
+
+                object_mesh.cb.particle_type = str(entity_dict["particle_type"])
+                object_mesh.cb.particle_id = entity_dict["id"]
+
+                i, j ,k = entity_dict["angles"].split(" ")
+                loc = room_scale * Vector(flip(entity_dict["position"]))
+                rot = get_blender_rot((float(i), float(j), float(k)))
+                scl = Vector((1, 1, 1))
+                object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
+
+            elif entity_dict["entity_type"] == "mp_damageboss_radius":
+                object_mesh = bpy.data.objects.new("%s mp_damageboss_radius" % entity_idx, None)
+                object_mesh.empty_display_size = room_scale * 80
+                object_mesh.cb.object_type = str(ObjectType.entity_mp_damage_boss_radius.value)
+                entity_collection.objects.link(object_mesh)
+
+                object_mesh.cb.damage_boss_id = entity_dict["id"]
+
+                loc = room_scale * Vector(flip(entity_dict["position"]))
+                rot = Euler((0, 0, 0))
+                scl = Vector((entity_dict["range"], entity_dict["range"], entity_dict["range"]))
+                object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
+
+                object_mesh.empty_display_type = 'SPHERE'
+
+            elif entity_dict["entity_type"] == "mp_playerspawn":
+                object_mesh = bpy.data.objects.new("%s mp_playerspawn" % entity_idx, None)
+                object_mesh.empty_display_size = room_scale * 80
+                object_mesh.cb.object_type = str(ObjectType.entity_mp_player_spawn.value)
+                entity_collection.objects.link(object_mesh)
+
+                object_mesh.cb.player_spawn_team = str(entity_dict["team"])
+
+                loc = room_scale * Vector(flip(entity_dict["position"]))
+                rot = get_blender_rot((0.0, entity_dict["yaw"], 0.0))
+                rot = rot @ Euler((0.0, radians(90), radians(90))).to_quaternion()
+                scl = Vector((1, 1, 1))
+                object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
+
+                object_mesh.empty_display_type = 'SINGLE_ARROW'
+
+            elif entity_dict["entity_type"] == "mp_enemyspawn":
+                object_mesh = bpy.data.objects.new("%s mp_enemyspawn" % entity_idx, None)
+                object_mesh.empty_display_size = room_scale * 80
+                object_mesh.cb.object_type = str(ObjectType.entity_mp_enemy_spawn.value)
+                entity_collection.objects.link(object_mesh)
+
+                object_mesh.cb.scp_008_1_valid = "zombie" in entity_dict["enemy_string"]
+                object_mesh.cb.scp_939_valid = "939" in entity_dict["enemy_string"]
+                object_mesh.cb.scp_1048_a_valid = "1048a" in entity_dict["enemy_string"]
+
+                loc = room_scale * Vector(flip(entity_dict["position"]))
+                rot = Euler((0, 0, 0))
+                scl = Vector((1, 1, 1))
+                object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
+
+            elif entity_dict["entity_type"] == "mp_itemspawn":
+                object_mesh = bpy.data.objects.new("%s mp_itemspawn" % entity_idx, None)
+                object_mesh.empty_display_size = room_scale * 1
+                object_mesh.cb.object_type = str(ObjectType.entity_mp_item_spawn.value)
+                entity_collection.objects.link(object_mesh)
+
+                object_mesh.cb.item_type = str(entity_dict["item_type"])
+                object_mesh.cb.respawn_time = entity_dict["respawn_time"]
+
+                time_min, time_max = entity_dict["random_time"].split(" ")
+                object_mesh.cb.random_time_min = int(time_min)
+                object_mesh.cb.random_time_max = int(time_max)
+
+                loc = room_scale * Vector(flip(entity_dict["position"]))
+                rot = Euler((0, 0, 0))
+                scl = Vector((1, 1, 1))
+                object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
+
+            elif entity_dict["entity_type"] == "flu_light":
+                model_path = get_file("light_flu.x", False, directory_path=local_prop_path)
+                ob_data = entity_meshes.get(model_path)
+                if ob_data is None and model_path:
+                    ob_data = entity_meshes[model_path] = bpy.data.meshes.new("%s flu_light" % entity_idx)
+                    bm = bmesh.new()
+                    is_simple=True
+                    if model_path.lower().endswith(".b3d"):
+                        import_b3d(context, Path(model_path), fullbright_materials, use_light_radius, "0", True, report, bm, ob_data, is_simple, error_log, random_color_gen)
+
+                    else:
+                        import_x(context, Path(model_path), True, report, bm, ob_data, is_simple, error_log, random_color_gen)
+
+                    bm.to_mesh(ob_data)
+                    bm.free()
+
+                object_mesh = bpy.data.objects.new("%s %s" % (entity_idx, entity_dict["entity_type"]), ob_data)
+                if ob_data is None:
+                    object_mesh.empty_display_size = room_scale * 1
+
+                object_mesh.cb.object_type = str(ObjectType.entity_fluorescent_light.value)
+                if model_path is not None:
+                    object_mesh.cb.model_path = model_path
+
+                entity_collection.objects.link(object_mesh)
+
+                object_mesh.cb.flu_light_state = str(entity_dict["id"])
+
+                loc = room_scale * Vector(flip(entity_dict["position"]))
+                rot = get_blender_rot(entity_dict["euler_rotation"])
+                scl = Vector((1, 1, 1))
+                object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
             else:
                 report({'WARNING'}, "Unknown entity type: %s" % entity_dict["entity_type"])

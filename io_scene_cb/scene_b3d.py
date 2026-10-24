@@ -9,6 +9,7 @@ from enum import Enum, auto, Flag
 from collections import defaultdict
 from math import radians, degrees, floor
 from .process_b3d import B3DTree, write_b3d
+from .scale_helpers import get_ingame_scale
 from mathutils import Matrix, Vector, Quaternion
 from .common_functions import (RandomColorGenerator,
                                MaterialType,
@@ -24,7 +25,6 @@ from .common_functions import (RandomColorGenerator,
                                get_shader_node,
                                connect_inputs,
                                generate_texture_mapping,
-                               get_ingame_scale,
                                SHADER_NODE_NAMES)
 
 class TextureFXFlags(Flag):
