@@ -933,6 +933,8 @@ def render_entity_flu_light(context, layout, active_property):
     box = layout.split()
     col = box.column(align=True)
     row = col.row()
+    row.operator("cb.update_ob")
+    row = col.row()
     row.label(text='Fluorescent Light State:')
     row.prop(active_property, "flu_light_state", text='')
 

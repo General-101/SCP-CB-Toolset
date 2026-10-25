@@ -34,8 +34,11 @@ MIN_BUTTON_LENGTH = 0.01
 def update_object(context, report):
     ob = context.object
     ob_type = ObjectType(int(ob.cb.object_type))
-    if ob_type == ObjectType.entity_model:
-        model_path = bpy.path.abspath(ob.cb.model_path)
+    if ob_type == ObjectType.entity_model or ob_type == ObjectType.entity_model_no_collision or ob_type == ObjectType.entity_fusebox or ob_type == ObjectType.entity_generator or ob_type == ObjectType.entity_button_generator or ob_type == ObjectType.entity_lever_generator or ob_type == ObjectType.entity_fluorescent_light:
+        if ob_type == ObjectType.entity_fluorescent_light:
+            model_path = get_file("light_flu.x", False)
+        else:
+            model_path = bpy.path.abspath(ob.cb.model_path)
         if os.path.isfile(model_path):
             ob.data.clear_geometry()
             ob.data.materials.clear()
@@ -50,6 +53,39 @@ def update_object(context, report):
 
             bm.to_mesh(ob.data)
             bm.free()
+
+            if ob_type == ObjectType.entity_lever_generator:
+                model_path = bpy.path.abspath(ob.cb.handle_model_path)
+                if os.path.isfile(model_path):
+                    children = ob.children
+                    handle_ob = None
+                    for child in children:
+                        handle_ob = child
+                        break
+
+                    if handle_ob == None:
+                        handle_mesh = bpy.data.meshes.new("handle_model")
+                        handle_ob = bpy.data.objects.new("handle_model", handle_mesh)
+                        context.collection.objects.link(handle_ob)
+                        handle_ob.parent = ob
+                        handle_ob.matrix_world = ob.matrix_world
+
+                    handle_ob.data.clear_geometry()
+                    handle_ob.data.materials.clear()
+
+                    bm = bmesh.new()
+                    is_simple=True
+                    if model_path.lower().endswith(".b3d"):
+                        import_b3d(context, Path(model_path), True, True, "0", True, report, bm, handle_ob.data, is_simple)
+
+                    else:
+                        import_x(context, Path(model_path), True, report, bm, handle_ob.data, is_simple)
+
+                    bm.to_mesh(handle_ob.data)
+                    bm.free()
+
+                else:
+                    report({'WARNING'}, 'Model path does not point to a valid file.')
 
         else:
             report({'WARNING'}, 'Model path does not point to a valid file.')
@@ -223,6 +259,28 @@ def collect_objects():
         elif ob_type == ObjectType.entity_item:
             entity_list.append(ob)
         elif ob_type == ObjectType.entity_door:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_model_no_collision:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_fusebox:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_generator:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_button_generator:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_lever_generator:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_particle_generator:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_mp_damage_boss_radius:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_mp_player_spawn:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_mp_enemy_spawn:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_mp_item_spawn:
+            entity_list.append(ob)
+        elif ob_type == ObjectType.entity_fluorescent_light:
             entity_list.append(ob)
 
     entity_list.sort(key=lambda obj: natural_key(obj.name)) # Doing this cause no idea if the game cares about order for entities. Probably not but better be safe. - Gen
@@ -428,6 +486,8 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
         rmesh_file_type = "RoomMesh"
     elif file_type == ExportFileType.rmesh_tb:
         rmesh_file_type = "RoomMesh.HasTriggerBox"
+    elif file_type == ExportFileType.rmesh_nc:
+        rmesh_file_type = "RoomMesh.HasNoColl"
     elif file_type == ExportFileType.rmesh_uer2:
         rmesh_file_type = "RoomMesh2"
     elif file_type == ExportFileType.rmesh_salvage:
@@ -593,7 +653,7 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
             entity_dict["range"] = ob.data.distance_max
             rmesh_dict["entities"].append(entity_dict)
 
-        elif object_type == ObjectType.entity_model:
+        elif object_type == ObjectType.entity_model or object_type == ObjectType.entity_model_no_collision or object_type == ObjectType.entity_fusebox or object_type == ObjectType.entity_generator or object_type == ObjectType.entity_button_generator or object_type == ObjectType.entity_lever_generator:
             loc, rot, scl = ob.matrix_world.decompose()
             entity_dict = {}
 
@@ -601,7 +661,18 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
                 entity_dict["entity_type"] = "mesh"
 
             else:
-                entity_dict["entity_type"] = "model"
+                if object_type == ObjectType.entity_model_no_collision:
+                    entity_dict["entity_type"] = "model_nocoll"
+                elif object_type == ObjectType.entity_fusebox:
+                    entity_dict["entity_type"] = "fusebox"
+                elif object_type == ObjectType.entity_generator:
+                    entity_dict["entity_type"] = "generator"
+                elif object_type == ObjectType.entity_button_generator:
+                    entity_dict["entity_type"] = "button_gen"
+                elif object_type == ObjectType.entity_lever_generator:
+                    entity_dict["entity_type"] = "lever_gen"
+                else:
+                    entity_dict["entity_type"] = "model"
 
             model_name = os.path.basename(bpy.path.abspath(ob.cb.model_path))
             texture_name = ""
@@ -611,6 +682,9 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
                 if len(results) > 1:
                     texture_name = results[1]
 
+            if object_type == ObjectType.entity_generator or object_type == ObjectType.entity_button_generator or object_type == ObjectType.entity_lever_generator:
+                model_name = "props\\%s" % model_name
+
             entity_dict["model_name"] = model_name
             entity_dict["texture_name"] = texture_name
             entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
@@ -618,6 +692,29 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
             entity_dict["scale"] = flip(scl)
             entity_dict["has_collision"] = int(ob.cb.has_collision)
             entity_dict["fx"] = ob.cb.fx
+            if object_type == ObjectType.entity_generator:
+                entity_dict["sfx"] = ob.cb.generator_sfx
+                entity_dict["sfx_range"] = ob.cb.generator_sfx_range
+                entity_dict["id"] = ob.cb.generator_id
+            elif object_type == ObjectType.entity_button_generator:
+                entity_dict["id"] = ob.cb.button_id
+            elif object_type == ObjectType.entity_lever_generator:
+                lever_angle = 0.0
+                children = ob.children
+                handle_ob = None
+                for child in children:
+                    handle_ob = child
+                    break
+
+                if not handle_ob == None:
+                    loc, rot, scl = handle_ob.matrix_local.decompose()
+                    i, j, k = rot.to_euler()
+                    lever_angle = degrees(j)
+
+                handle_model_name = os.path.basename(bpy.path.abspath(ob.cb.handle_model_path))
+                entity_dict["handle_model"] = "props\\%s" % handle_model_name
+                entity_dict["angle"] = int(lever_angle)
+                entity_dict["id"] = ob.cb.lever_id
 
             rmesh_dict["entities"].append(entity_dict)
 
@@ -692,6 +789,85 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
             entity_dict["button_2_position"] = button_2_position
             entity_dict["button_2_angle"] = button_2_angle
 
+            rmesh_dict["entities"].append(entity_dict)
+
+        elif object_type == ObjectType.entity_particle_generator:
+            loc, rot, scl = ob.matrix_world.decompose()
+
+            i, j, k = get_blitz_rot(rot)
+
+            entity_dict = {}
+            entity_dict["entity_type"] = "particle_gen"
+            entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
+            entity_dict["particle_type"] = int(ob.cb.particle_type)
+            entity_dict["angles"] = "%s %s %s" % (int(i), int(j), int(k))
+            entity_dict["id"] = ob.cb.particle_id
+            rmesh_dict["entities"].append(entity_dict)
+
+        elif object_type == ObjectType.entity_mp_damage_boss_radius:
+            loc, rot, scl = ob.matrix_world.decompose()
+
+            entity_dict = {}
+            entity_dict["entity_type"] = "mp_damageboss_radius"
+            entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
+            entity_dict["range"] = int(scl[0])
+            entity_dict["id"] = ob.cb.damage_boss_id
+            rmesh_dict["entities"].append(entity_dict)
+
+        elif object_type == ObjectType.entity_mp_player_spawn:
+            loc, rot, scl = ob.matrix_local.decompose()
+            rot = Euler((radians(90), radians(90), 0)).to_quaternion().inverted() @ rot
+            i, j, k = rot.to_euler()
+
+            entity_dict = {}
+            entity_dict["entity_type"] = "mp_playerspawn"
+            entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
+            entity_dict["team"] = int(ob.cb.player_spawn_team)
+            entity_dict["yaw"] = int(degrees(i))
+            rmesh_dict["entities"].append(entity_dict)
+
+        elif object_type == ObjectType.entity_mp_enemy_spawn:
+            loc, rot, scl = ob.matrix_world.decompose()
+
+            enemy_string = ""
+            if ob.cb.scp_008_1_valid:
+                if len(enemy_string) > 0:
+                    enemy_string = enemy_string + ";"
+                enemy_string = enemy_string + "zombie"
+            if ob.cb.scp_939_valid:
+                if len(enemy_string) > 0:
+                    enemy_string = enemy_string + ";"
+                enemy_string = enemy_string + "939"
+            if ob.cb.scp_1048_a_valid:
+                if len(enemy_string) > 0:
+                    enemy_string = enemy_string + ";"
+                enemy_string = enemy_string + "1048a"
+
+            entity_dict = {}
+            entity_dict["entity_type"] = "mp_enemyspawn"
+            entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
+            entity_dict["enemy_string"] = enemy_string
+            rmesh_dict["entities"].append(entity_dict)
+
+        elif object_type == ObjectType.entity_mp_item_spawn:
+            loc, rot, scl = ob.matrix_world.decompose()
+
+            entity_dict = {}
+            entity_dict["entity_type"] = "mp_itemspawn"
+            entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
+            entity_dict["item_type"] = int(ob.cb.item_type)
+            entity_dict["respawn_time"] = int(ob.cb.respawn_time)
+            entity_dict["random_time"] = "%s %s" % (ob.cb.random_time_min, ob.cb.random_time_max)
+            rmesh_dict["entities"].append(entity_dict)
+
+        elif object_type == ObjectType.entity_fluorescent_light:
+            loc, rot, scl = ob.matrix_world.decompose()
+
+            entity_dict = {}
+            entity_dict["entity_type"] = "flu_light"
+            entity_dict["position"] = tuple((1.0 / room_scale) * Vector(flip(loc)))
+            entity_dict["euler_rotation"] = get_blitz_rot(rot)
+            entity_dict["id"] = int(ob.cb.flu_light_state)
             rmesh_dict["entities"].append(entity_dict)
 
     write_rmesh(rmesh_dict, filepath, file_type)
@@ -1068,7 +1244,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
 
                 loc = room_scale * Vector(flip(entity_dict["position"]))
                 rot = get_blender_rot(entity_dict["euler_rotation"])
-                scl = Vector(entity_dict["scale"])
+                scl = Vector(flip(entity_dict["scale"]))
                 object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
                 model_path = get_file(entity_dict["model_name"], False)
@@ -1281,7 +1457,6 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     rot = Euler((0, radians(entity_dict["angle"]), 0))
                     scl = Vector((1.0, 1.0, 1.0))
                     lever_object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
-                    print(handle_model_path)
                     if handle_model_path is not None:
                         object_mesh.cb.handle_model_path = handle_model_path
 
@@ -1306,7 +1481,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 if has_position_data:
                     loc = room_scale * Vector(flip(entity_dict["position"]))
                     rot = get_blender_rot(entity_dict["euler_rotation"])
-                    scl = Vector(entity_dict["scale"])
+                    scl = Vector(flip(entity_dict["scale"]))
                     object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
                 if is_uer_prop:
@@ -1454,8 +1629,8 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 object_mesh.cb.player_spawn_team = str(entity_dict["team"])
 
                 loc = room_scale * Vector(flip(entity_dict["position"]))
-                rot = get_blender_rot((0.0, entity_dict["yaw"], 0.0))
-                rot = rot @ Euler((0.0, radians(90), radians(90))).to_quaternion()
+                rot = Euler((entity_dict["yaw"], 0, 0)).to_quaternion()
+                rot = rot @ Euler((radians(-90), radians(-90), 0)).to_quaternion()
                 scl = Vector((1, 1, 1))
                 object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
