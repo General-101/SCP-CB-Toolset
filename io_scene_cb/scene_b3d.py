@@ -773,11 +773,6 @@ def import_node_recursive(context, filepath, data, node, material_list, room_sca
 
                 object_mesh.cb.object_type = str(ObjectType.entity_waypoint.value)
 
-            elif result["classname"].lower().startswith("bone"):
-                object_mesh = bpy.data.objects.new(result["classname"], None)
-                armature = object_mesh
-                context.collection.objects.link(object_mesh)
-
             else:
                 if not generated_mesh and has_mesh and not has_skeleton:
                     generated_mesh = True
