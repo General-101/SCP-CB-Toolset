@@ -1739,8 +1739,10 @@ def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_
                         elif texture_type == TextureTypeEnum.diffuse:
                             texture_node.location = (-720.0, -380)
                             connect_inputs(material.node_tree, texture_node, "Color", shader_input_node, shader_color_input)
-                            if mat_blend == MaterialBlendEnum.alpha or mat_blend == MaterialBlendEnum.add or str(filepath).lower().endswith("key.b3d"):
+                            if TextureFXFlags.alpha in tex_flags:
                                 connect_inputs(material.node_tree, texture_node, "Alpha", shader_input_node, shader_alpha_input)
+                            if mat_blend == MaterialBlendEnum.add:
+                                connect_inputs(material.node_tree, texture_node, "Color", shader_input_node, shader_alpha_input)
 
                             mapping_node, uv_node = generate_texture_mapping(material.node_tree, texture_node)
                             uv_node.uv_map = "uvmap_render"

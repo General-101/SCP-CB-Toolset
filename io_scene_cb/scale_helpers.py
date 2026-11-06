@@ -36,7 +36,7 @@ def get_ingame_scale(game_path, filepath, use_game_rules, is_inverse=False):
         npcs_ini = configparser.ConfigParser()
         npcs_ini.read(npcs_ini_path)
 
-    if not filepath.startswith(str(game_path)):
+    if not str(filepath).startswith(str(game_path)):
         return result, rotation_angle, rotation_axis
     filepath_l =  Path(filepath).relative_to(game_path).as_posix()
     if filepath_l == "GFX/173box.b3d":
