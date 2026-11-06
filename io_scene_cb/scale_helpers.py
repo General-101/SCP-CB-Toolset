@@ -748,7 +748,7 @@ def get_ingame_scale(game_path, filepath, use_game_rules, is_inverse=False):
         if items_ini is not None:
             ini_value = float(npcs_ini.get("SCP-066", "scale", fallback=0.17))
 
-        scale_val = (ini_value * game_scale_inverse)
+        scale_val = ((ini_value / 2.5) * game_scale_inverse)
         result = Matrix.LocRotScale(Vector((0, 0, 0)), Euler((0, 0, 0)), Vector((scale_val, scale_val, scale_val)))
         rotation_angle = 90
         rotation_axis = "Z"
