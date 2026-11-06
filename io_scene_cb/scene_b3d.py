@@ -39,6 +39,8 @@ class TextureFXFlags(Flag):
     store_texture_in_vram = auto()
     force_high_color_textures = auto()
     uses_lightmap_uv = 65536
+    no_display = 131072 # Don't know what these two are or if they do anything. - Gen
+    high_color = 262144
 
 class TextureBlendEnum(Enum):
     do_not_blend = 0
@@ -55,11 +57,17 @@ class MaterialFXFlags(Flag):
     disable_fog = auto()
     disable_backface_culling = auto()
     use_vertex_color_alpha_as_transparency = auto()
+    alpha_test = 8192 # Don't know what these three are or if they do anything. - Gen
+    cond_light = 16384
+    emissive = 32768
 
 class MaterialBlendEnum(Enum):
-    alpha = 0
+    replace = 0
+    alpha = auto()
     multiply = auto()
     add = auto()
+    dot3 = auto()
+    multiply2 = auto()
 
 class TextureTypeEnum(Enum):
     lightmap = 0
@@ -168,9 +176,14 @@ def import_fcurve_data(room_scale, ob, strips, bone_name, keyframe_dict, node_tr
                     slot_name = ob.name
 
                 else:
+                    if ob is None:
+                        ob_name = bone_name
+                    else:
+                        ob_name = ob.name
+
                     fcurve_data_path = path
-                    group_name = ob.name
-                    slot_name = ob.name
+                    group_name = ob_name
+                    slot_name = ob_name
 
                 if (5,0,0)<=bpy.app.version:
                     if action.slots:
@@ -913,6 +926,12 @@ def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
                         mat_fx += MaterialFXFlags.disable_backface_culling.value
                     if node_group.inputs["Use Vertex Color Alpha As Transparency"].default_value:
                         mat_fx += MaterialFXFlags.use_vertex_color_alpha_as_transparency.value
+                    if node_group.inputs["Alpha Test"].default_value:
+                        mat_fx += MaterialFXFlags.alpha_test.value
+                    if node_group.inputs["Cond Light"].default_value:
+                        mat_fx += MaterialFXFlags.cond_light.value
+                    if node_group.inputs["Emissive"].default_value:
+                        mat_fx += MaterialFXFlags.emissive.value
 
                 elif bdsf_principled:
                     lightmap_node = None
@@ -1005,6 +1024,10 @@ def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
                             fx += TextureFXFlags.force_high_color_textures.value
                         if is_lightmap:
                             fx += TextureFXFlags.uses_lightmap_uv.value
+                        if img.cb.no_display:
+                            fx += TextureFXFlags.no_display.value
+                        if img.cb.high_color:
+                            fx += TextureFXFlags.high_color.value
 
                         texture_dict = {
                             "name": image_name,
@@ -1363,6 +1386,10 @@ def set_image_properties(img, texture_dict):
             img_b3d.store_texture_in_vram = True
         if TextureFXFlags.force_high_color_textures in tex_flags:
             img_b3d.force_high_color_textures = True
+        if TextureFXFlags.no_display in tex_flags:
+            img_b3d.no_display = True
+        if TextureFXFlags.high_color in tex_flags:
+            img_b3d.high_color = True
 
         img_b3d.blend_type = str(texture_dict["blend"])
 
@@ -1382,6 +1409,12 @@ def set_material_properties(b3d_node, material_dict):
             b3d_node.inputs["Disable Backface Culling"].default_value = True
         if MaterialFXFlags.use_vertex_color_alpha_as_transparency in mat_flags:
             b3d_node.inputs["Use Vertex Color Alpha As Transparency"].default_value = True
+        if MaterialFXFlags.alpha_test in mat_flags:
+            b3d_node.inputs["Alpha Test"].default_value = True
+        if MaterialFXFlags.cond_light in mat_flags:
+            b3d_node.inputs["Cond Light"].default_value = True
+        if MaterialFXFlags.emissive in mat_flags:
+            b3d_node.inputs["Emissive"].default_value = True
 
         b3d_node.inputs["Use Overlay"].default_value = True
         b3d_node.inputs["Use Shine"].default_value = True
@@ -1413,6 +1446,10 @@ def get_image_properties(img, texture_dict):
         tex_flags += TextureFXFlags.store_texture_in_vram.value
     if img_b3d.force_high_color_textures:
         tex_flags += TextureFXFlags.force_high_color_textures.value
+    if img_b3d.no_display:
+        tex_flags += TextureFXFlags.no_display.value
+    if img_b3d.high_color:
+        tex_flags += TextureFXFlags.high_color.value
 
     texture_dict["flags"] = tex_flags
     texture_dict["blend"] = int(img_b3d.blend_type)

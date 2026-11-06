@@ -613,6 +613,18 @@ class B3DImagePropertiesGroup(PropertyGroup):
         default = False,
         )
 
+    no_display: BoolProperty(
+        name ="No Display",
+        description = "???",
+        default = False,
+        )
+
+    high_color: BoolProperty(
+        name ="High Color",
+        description = "???",
+        default = False,
+        )
+
     blend_type: EnumProperty(
         name="Blend Type",
         description="Set the blend type",
@@ -651,6 +663,8 @@ class B3DIMAGE_PT_SceneProps(Panel):
         layout.prop(props, "cubic_environment_map")
         layout.prop(props, "store_texture_in_vram")
         layout.prop(props, "force_high_color_textures")
+        layout.prop(props, "no_display")
+        layout.prop(props, "high_color")
         layout.prop(props, "blend_type")
 
 def render_mesh(context, layout, active_property):
