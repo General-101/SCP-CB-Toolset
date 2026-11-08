@@ -126,7 +126,16 @@ def read_rmesh(file_path, file_type):
 
         if file_type == ImportFileType.rmesh_auto:
             if rmesh_dict["rmesh_file_type"] == "RoomMesh":
-                file_type = ImportFileType.rmesh
+                current_pos = rmesh_stream.tell()
+                data = rmesh_stream.read()
+                mesh_pos = data.find(b"mesh")
+                light_fix_pos = data.find(b"light_fix")
+                rmesh_stream.seek(current_pos)
+                # 50% of the time it works every time - Gen
+                if not mesh_pos == -1 or not light_fix_pos == -1:
+                    file_type = ImportFileType.rmesh_uer
+                else:
+                    file_type = ImportFileType.rmesh
 
             elif rmesh_dict["rmesh_file_type"] == "RoomMesh.HasTriggerBox":
                 file_type = ImportFileType.rmesh_tb
@@ -183,6 +192,9 @@ def read_rmesh(file_path, file_type):
                 entity_dict["position"] = read_vector(rmesh_stream)
 
             elif entity_dict["entity_type"] == "light":
+                if rmesh_dict["rmesh_version"] >= 2:
+                    entity_dict["has_sprite"] = read_byte(rmesh_stream)
+
                 entity_dict["position"] = read_vector(rmesh_stream)
                 entity_dict["range"] = read_float(rmesh_stream)
                 entity_dict["color"] = read_string(rmesh_stream)
@@ -219,6 +231,9 @@ def read_rmesh(file_path, file_type):
                     entity_dict["range"] = read_float(rmesh_stream)
 
             elif entity_dict["entity_type"] == "spotlight":
+                if rmesh_dict["rmesh_version"] >= 2:
+                    entity_dict["has_sprite"] = read_byte(rmesh_stream)
+
                 entity_dict["position"] = read_vector(rmesh_stream)
                 entity_dict["range"] = read_float(rmesh_stream)
                 entity_dict["color"] = read_string(rmesh_stream)
@@ -256,6 +271,10 @@ def read_rmesh(file_path, file_type):
                     if not entity_dict["model_name"] == "":
                         entity_dict["euler_rotation"] = read_vector(rmesh_stream)
                         entity_dict["scale"] = read_vector(rmesh_stream)
+                        if rmesh_dict["rmesh_version"] >= 2 and entity_dict["entity_type"] == "model":
+                            entity_dict["has_collision"] = read_byte(rmesh_stream)
+                            entity_dict["fx"] = read_integer(rmesh_stream)
+                            entity_dict["texture_name"] = read_string(rmesh_stream)
 
             elif entity_dict["entity_type"] == "mesh":
                 entity_dict["position"] = read_vector(rmesh_stream)
@@ -444,6 +463,9 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                 write_vector(rmesh_stream, entity_dict["position"])
 
             elif entity_dict["entity_type"] == "light":
+                if rmesh_dict["rmesh_version"] >= 2:
+                    write_byte(rmesh_stream, entity_dict["has_sprite"])
+
                 write_vector(rmesh_stream, entity_dict["position"])
                 write_float(rmesh_stream, entity_dict["range"])
                 write_string(rmesh_stream, entity_dict["color"])
@@ -475,6 +497,9 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                     write_float(rmesh_stream, entity_dict["range"])
 
             elif entity_dict["entity_type"] == "spotlight":
+                if rmesh_dict["rmesh_version"] >= 2:
+                    write_byte(rmesh_stream, entity_dict["has_sprite"])
+
                 write_vector(rmesh_stream, entity_dict["position"])
                 write_float(rmesh_stream, entity_dict["range"])
                 write_string(rmesh_stream, entity_dict["color"])
@@ -505,6 +530,10 @@ def write_rmesh(rmesh_dict, output_path, file_type):
                     if not entity_dict["model_name"] == "":
                         write_vector(rmesh_stream, entity_dict["euler_rotation"])
                         write_vector(rmesh_stream, entity_dict["scale"])
+                        if rmesh_dict["rmesh_version"] >= 2 and entity_dict["entity_type"] == "model":
+                            write_byte(rmesh_stream, entity_dict["has_collision"])
+                            write_integer(rmesh_stream, entity_dict["fx"])
+                            write_string(rmesh_stream, entity_dict["texture_name"])
 
             elif entity_dict["entity_type"] == "mesh":
                 write_vector(rmesh_stream, entity_dict["position"])

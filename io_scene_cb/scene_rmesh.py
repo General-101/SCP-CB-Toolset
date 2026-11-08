@@ -6,6 +6,7 @@ import ntpath
 import configparser
 
 from pathlib import Path
+from enum import Enum, auto, Flag
 from math import radians, degrees
 from .scene_x import import_scene as import_x
 from .scene_b3d import import_scene as import_b3d
@@ -30,6 +31,24 @@ from .common_functions import (RandomColorGenerator,
                                SHADER_NODE_NAMES)
 
 MIN_BUTTON_LENGTH = 0.01
+
+class GameTitleEnum(Enum):
+    cb_regalis = 0
+    cb_salvage = auto()
+    cb_uer_snoe = auto()
+    cb_uer_jabka = auto()
+    cb_ntf = auto()
+
+class EntityFXFlags(Flag):
+    full_bright = auto()
+    use_vertex_colors_instead_of_brush_color = auto()
+    flatshaded = auto()
+    disable_fog = auto()
+    disable_backface_culling = auto()
+    force_alpha_blending = auto()
+    alpha_test = 8192 # Don't know what these three are or if they do anything. - Gen
+    cond_light = 16384
+    emissive = 32768
 
 def update_object(context, report):
     ob = context.object
@@ -492,6 +511,7 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
         rmesh_file_type = "RoomMesh2"
     elif file_type == ExportFileType.rmesh_salvage:
         rmesh_file_type = "RM"
+        rmesh_version = 2
 
     file_extension = ".rmesh"
 
@@ -605,6 +625,8 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
                 entity_dict["ff_array"] = []
                 for ff in range(31):
                     entity_dict["ff_array"].append(0)
+            elif file_type == ExportFileType.rmesh_salvage:
+                entity_dict["has_sprite"] = ob.cb.has_sprite
 
             rmesh_dict["entities"].append(entity_dict)
 
@@ -640,6 +662,8 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
                 entity_dict["euler_rotation"] = "%s %s %s" % (p, y, r)
                 entity_dict["inner_cone_angle"] = int(ob.data.spot_blend * outer_deg)
                 entity_dict["outer_cone_angle"] = int(outer_deg)
+                if file_type == ExportFileType.rmesh_salvage:
+                    entity_dict["has_sprite"] = ob.cb.has_sprite
 
             rmesh_dict["entities"].append(entity_dict)
 
@@ -691,7 +715,22 @@ def export_scene(context, filepath, file_type, use_lightmap_name_override, use_g
             entity_dict["euler_rotation"] = get_blitz_rot(rot)
             entity_dict["scale"] = flip(scl)
             entity_dict["has_collision"] = int(ob.cb.has_collision)
-            entity_dict["fx"] = ob.cb.fx
+
+            entity_fx = 0
+            if ob.cb.full_bright:
+                entity_fx += EntityFXFlags.full_bright.value
+            if ob.cb.use_vertex_colors_instead_of_brush_color:
+                entity_fx += EntityFXFlags.use_vertex_colors_instead_of_brush_color.value
+            if ob.cb.flatshaded:
+                entity_fx += EntityFXFlags.flatshaded.value
+            if ob.cb.disable_fog:
+                entity_fx += EntityFXFlags.disable_fog.value
+            if ob.cb.disable_backface_culling:
+                entity_fx += EntityFXFlags.disable_backface_culling.value
+            if ob.cb.force_alpha_blending:
+                entity_fx += EntityFXFlags.force_alpha_blending.value
+
+            entity_dict["fx"] = entity_fx
             if object_type == ObjectType.entity_generator:
                 entity_dict["sfx"] = ob.cb.generator_sfx
                 entity_dict["sfx_range"] = ob.cb.generator_sfx_range
@@ -1072,6 +1111,24 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
     material_type_enum = MaterialType(int(bpy.context.preferences.addons[__package__].preferences.material_type))
     set_gamma = bpy.context.preferences.addons[__package__].preferences.set_gamma
 
+    if file_type == ImportFileType.rmesh:
+        context.scene.cb.game_title = str(GameTitleEnum.cb_regalis.value)
+
+    elif file_type == ImportFileType.rmesh_tb:
+        context.scene.cb.game_title = str(GameTitleEnum.cb_regalis.value)
+
+    elif file_type == ImportFileType.rmesh_nc:
+        context.scene.cb.game_title = str(GameTitleEnum.cb_ntf.value)
+
+    elif file_type == ImportFileType.rmesh_uer:
+        context.scene.cb.game_title = str(GameTitleEnum.cb_uer_snoe.value)
+
+    elif file_type == ImportFileType.rmesh_uer2:
+        context.scene.cb.game_title = str(GameTitleEnum.cb_uer_jabka.value)
+
+    elif file_type == ImportFileType.rmesh_salvage:
+        context.scene.cb.game_title = str(GameTitleEnum.cb_salvage.value)
+
     random_color_gen = RandomColorGenerator() # generates a random sequence of colors
 
     error_log = set()
@@ -1297,6 +1354,9 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     if entity_dict["entity_type"] == "light_fix":
                         object_mesh.cb.is_light_fix = True
 
+                if file_type == ImportFileType.rmesh_salvage:
+                    object_mesh.cb.has_sprite = bool(entity_dict["has_sprite"])
+
                 if file_type == ImportFileType.rmesh_uer2:
                     object_mesh.cb.has_sprite = bool(entity_dict["has_sprite"])
                     object_mesh.cb.sprite_scale = entity_dict["sprite_scale"]
@@ -1327,6 +1387,9 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 object_data.color = (int(r) / 255, int(g) / 255, int(b) / 255)
                 if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2:
                     object_mesh.cb.is_uer = True
+
+                if file_type == ImportFileType.rmesh_salvage:
+                    object_mesh.cb.has_sprite = bool(entity_dict["has_sprite"])
 
                 if file_type == ImportFileType.rmesh_uer2:
                     object_mesh.cb.has_sprite = bool(entity_dict["has_sprite"])
@@ -1393,7 +1456,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
 
                 model_path = get_file(entity_dict["model_name"], False, directory_path=local_prop_path)
                 texture_path = None
-                if is_uer_prop:
+                if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2 or ImportFileType.rmesh_salvage:
                     texture_path = get_file(entity_dict["texture_name"], True, False)
 
                 ob_data = entity_meshes.get(model_path)
@@ -1484,9 +1547,21 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     scl = Vector(flip(entity_dict["scale"]))
                     object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
-                if is_uer_prop:
+                if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2 or ImportFileType.rmesh_salvage:
                     object_mesh.cb.has_collision = bool(entity_dict["has_collision"])
-                    object_mesh.cb.fx = entity_dict["fx"]
+                    entity_fx_flags = EntityFXFlags(entity_dict["fx"])
+                    if EntityFXFlags.full_bright in entity_fx_flags:
+                        object_mesh.cb.full_bright = True
+                    if EntityFXFlags.use_vertex_colors_instead_of_brush_color in entity_fx_flags:
+                        object_mesh.cb.use_vertex_colors_instead_of_brush_color = True
+                    if EntityFXFlags.flatshaded in entity_fx_flags:
+                        object_mesh.cb.flatshaded = True
+                    if EntityFXFlags.disable_fog in entity_fx_flags:
+                        object_mesh.cb.disable_fog = True
+                    if EntityFXFlags.disable_backface_culling in entity_fx_flags:
+                        object_mesh.cb.disable_backface_culling = True
+                    if EntityFXFlags.force_alpha_blending in entity_fx_flags:
+                        object_mesh.cb.force_alpha_blending = True
 
             elif entity_dict["entity_type"] == "item":
                 ob_data = None

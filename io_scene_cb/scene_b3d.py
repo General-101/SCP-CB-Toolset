@@ -56,7 +56,7 @@ class MaterialFXFlags(Flag):
     flatshaded = auto()
     disable_fog = auto()
     disable_backface_culling = auto()
-    use_vertex_color_alpha_as_transparency = auto()
+    force_alpha_blending = auto()
     alpha_test = 8192 # Don't know what these three are or if they do anything. - Gen
     cond_light = 16384
     emissive = 32768
@@ -924,8 +924,8 @@ def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
                         mat_fx += MaterialFXFlags.disable_fog.value
                     if node_group.inputs["Disable Backface Culling"].default_value:
                         mat_fx += MaterialFXFlags.disable_backface_culling.value
-                    if node_group.inputs["Use Vertex Color Alpha As Transparency"].default_value:
-                        mat_fx += MaterialFXFlags.use_vertex_color_alpha_as_transparency.value
+                    if node_group.inputs["Force Alpha Blending"].default_value:
+                        mat_fx += MaterialFXFlags.force_alpha_blending.value
                     if node_group.inputs["Alpha Test"].default_value:
                         mat_fx += MaterialFXFlags.alpha_test.value
                     if node_group.inputs["Cond Light"].default_value:
@@ -1407,8 +1407,8 @@ def set_material_properties(b3d_node, material_dict):
             b3d_node.inputs["Disable Fog"].default_value = True
         if MaterialFXFlags.disable_backface_culling in mat_flags:
             b3d_node.inputs["Disable Backface Culling"].default_value = True
-        if MaterialFXFlags.use_vertex_color_alpha_as_transparency in mat_flags:
-            b3d_node.inputs["Use Vertex Color Alpha As Transparency"].default_value = True
+        if MaterialFXFlags.force_alpha_blending in mat_flags:
+            b3d_node.inputs["Force Alpha Blending"].default_value = True
         if MaterialFXFlags.alpha_test in mat_flags:
             b3d_node.inputs["Alpha Test"].default_value = True
         if MaterialFXFlags.cond_light in mat_flags:
@@ -1680,7 +1680,7 @@ def import_scene(context, filepath, fullbright_materials, use_light_radius, rot_
                     b3d_node.inputs["Is Fullbright"].default_value = True
 
                 mat_flags = MaterialFXFlags(material_dict["fx"])
-                if MaterialFXFlags.use_vertex_color_alpha_as_transparency in mat_flags:
+                if MaterialFXFlags.force_alpha_blending in mat_flags:
                     attr_node = material.node_tree.nodes.new("ShaderNodeVertexColor")
                     attr_node.location = (-720.0, 0)
 

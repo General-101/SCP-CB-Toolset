@@ -14,6 +14,7 @@ import bpy
 import configparser
 
 from pathlib import Path
+from enum import Enum, auto
 from .common_functions import get_shader_node, ObjectType
 from .scene_rmesh import update_object
 from .object_helper import connect_lightmaps, disconnect_lightmaps, bake_lightmaps
@@ -42,14 +43,14 @@ from bpy_extras.io_utils import (
 if (4, 1, 0) <= bpy.app.version:
     from bpy.types import FileHandler
 
-enum_items_cache = [("0", "None", ""), ("CUSTOM", "Custom", "")]
+sound_enum_items_cache = [("0", "None", ""), ("CUSTOM", "Custom", "")]
 
-def get_enum_items(self, context):
-    return enum_items_cache
+def get_sound_enum_items(self, context):
+    return sound_enum_items_cache
 
 def load_sound_emitters(self=None, context=None):
-    global enum_items_cache
-    enum_items_cache = []
+    global sound_enum_items_cache
+    sound_enum_items_cache = []
 
     if self is not None:
         game_path = Path(self.game_path)
@@ -72,14 +73,14 @@ def load_sound_emitters(self=None, context=None):
             if len(result) > 0:
                 result = result[0].lower()
 
-            enum_items_cache.append((str(key_idx + 1), result, result))
+            sound_enum_items_cache.append((str(key_idx + 1), result, result))
 
-        if len(enum_items_cache) > 0:
-            enum_items_cache.insert(0, ("0", "None", ""))
-            enum_items_cache.append(("CUSTOM", "Custom", ""))
+        if len(sound_enum_items_cache) > 0:
+            sound_enum_items_cache.insert(0, ("0", "None", ""))
+            sound_enum_items_cache.append(("CUSTOM", "Custom", ""))
 
-    if len(enum_items_cache) == 0:
-        enum_items_cache = [("0", "None", ""), ("CUSTOM", "Custom", "")]
+    if len(sound_enum_items_cache) == 0:
+        sound_enum_items_cache = [("0", "None", ""), ("CUSTOM", "Custom", "")]
 
 class CB_OT_RefreshSoundIds(Operator):
     bl_idname = "cb.gather_sound_ids"
@@ -97,16 +98,16 @@ class CB_OT_RefreshSoundIds(Operator):
 def get_sound_emitter_id(self):
     enum_index = self.get("sound_emitter_id", 0)
 
-    global enum_items_cache
-    item_count = len(enum_items_cache)
+    global sound_enum_items_cache
+    item_count = len(sound_enum_items_cache)
     if enum_index >= item_count:
         enum_index = item_count - 1
 
     return enum_index
 
 def set_sound_emitter_id(self, value):
-    global enum_items_cache
-    item_count = len(enum_items_cache)
+    global sound_enum_items_cache
+    item_count = len(sound_enum_items_cache)
     if value != item_count:
         self["sound_emitter_id"] = value
 
@@ -115,20 +116,27 @@ def set_sound_emitter_id(self, value):
 def get_generator_sfx(self):
     enum_index = self.get("generator_sfx", 0)
 
-    global enum_items_cache
-    item_count = len(enum_items_cache)
+    global sound_enum_items_cache
+    item_count = len(sound_enum_items_cache)
     if enum_index >= item_count:
         enum_index = item_count - 1
 
     return enum_index
 
 def set_generator_sfx(self, value):
-    global enum_items_cache
-    item_count = len(enum_items_cache)
+    global sound_enum_items_cache
+    item_count = len(sound_enum_items_cache)
     if value != item_count:
         self["generator_sfx"] = value
 
     self["generator_sfx_ui"] = value
+
+class GameTitleEnum(Enum):
+    cb_regalis = 0
+    cb_salvage = auto()
+    cb_uer_snoe = auto()
+    cb_uer_jabka = auto()
+    cb_ntf = auto()
 
 class SCPCBAddonPrefs(AddonPreferences):
     bl_idname = __name__
@@ -178,35 +186,150 @@ class SCPCBAddonPrefs(AddonPreferences):
         row.label(text='Set Gamma:')
         row.prop(self, "set_gamma", text='')
 
+class CB_SceneProps(Panel):
+    bl_label = "CB Scene Properties"
+    bl_idname = "CB_PT_ScenePropertiesPanel"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+class CB_ScenePropertiesGroup(PropertyGroup):
+    game_title: EnumProperty(
+        name="Game Title",
+        description="Filters the options show so that we only see relevant items",
+        items = ( ('0', "CB Regalis", "Filter for SCP CB 1.3.11. The last official release"),
+                    ('1', "CB Salvage", "Filter for SCP CB 1.3.12+ by Salvage"),
+                    ('2', "CB UER 1.6", "Filter for SCP CB UER 1.6+ by Snoe"),
+                    ('3', "CB UER 2.0", "Filter for SCP CB UER 2.0+ by Jabka"),
+                    ('4', "CB NTF", "Filter for SCP CB NTF")
+                )
+        )
+
+class CB_GlobalSettings(Panel):
+    bl_label = "Global Settings"
+    bl_idname = "CB_PT_GlobalSettings"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_parent_id = "CB_PT_ScenePropertiesPanel"
+
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        scene_cb = scene.cb
+
+        col = layout.column(align=True)
+        row = col.row()
+        row.label(text='Scene Game Title:')
+        row.prop(scene_cb, "game_title", text='')
+
+def get_object_enum_items(self, context):
+    game_title = GameTitleEnum(int(context.scene.cb.game_title))
+    enum_items_cache = [('0', "Exclude", "Object is excluded from export"),
+                ('1', "Mesh", "Object is valid for CB/CB-S/UER/UER2"),
+                ('2', "Render", "Object is valid for CB-S"),
+                ('3', "Collision", "Object is valid for CB/CB-S/UER/UER2"),
+                ('4', "Trigger Box", "Object is valid for CB/CB-S"),
+                ('5', "Entity Screen", "Object is valid for CB/CB-S/UER/UER2"),
+                ('6', "Entity Waypoint", "Object is valid for CB/CB-S/UER/UER2"),
+                ('7', "Entity Light", "Object is valid for CB/CB-S/UER/UER2"),
+                ('8', "Entity Spotlight", "Object is valid for CB/CB-S/UER/UER2"),
+                ('9', "Entity Sound Emitter", "Object is valid for CB/CB-S/UER/UER2"),
+                ('10', "Entity Model", "Object is valid for CB/CB-S/UER/UER2"),
+                ('11', "Entity Item", "Object is valid for CB-S"),
+                ('12', "Entity Door", "Object is valid for CB-S"),
+                ('13', "Entity Model No Collision", "Object is valid for NTF"),
+                ('14', "Entity Fusebox", "Object is valid for NTF"),
+                ('15', "Entity Generator", "Object is valid for NTF"),
+                ('16', "Entity Button Generator", "Object is valid for NTF"),
+                ('17', "Entity Lever Generator", "Object is valid for NTF"),
+                ('18', "Entity Particle Generator", "Object is valid for NTF"),
+                ('19', "Entity MP Damage Boss Radius", "Object is valid for NTF"),
+                ('20', "Entity MP Player Spawn", "Object is valid for NTF"),
+                ('21', "Entity MP Enemy Spawn", "Object is valid for NTF"),
+                ('22', "Entity MP Item Spawn", "Object is valid for NTF"),
+                ('23', "Entity Fluorescent Light", "Object is valid for NTF")]
+    if game_title == GameTitleEnum.cb_regalis:
+        enum_items_cache = [('0', "Exclude", "Object is excluded from export"),
+                    ('1', "Mesh", "Mesh"),
+                    ('3', "Collision", "Collision"),
+                    ('4', "Trigger Box", "Trigger Box"),
+                    ('5', "Entity Screen", "Entity Screen"),
+                    ('6', "Entity Waypoint", "Entity Waypoint"),
+                    ('7', "Entity Light", "Entity Light"),
+                    ('8', "Entity Spotlight", "Entity Spotlight"),
+                    ('9', "Entity Sound Emitter", "Entity Sound Emitter"),
+                    ('10', "Entity Model", "Entity Model")]
+    elif game_title == GameTitleEnum.cb_salvage:
+        enum_items_cache = [('0', "Exclude", "Object is excluded from export"),
+                    ('1', "Mesh", "Mesh"),
+                    ('2', "Render", "Render"),
+                    ('3', "Collision", "Collision"),
+                    ('4', "Trigger Box", "Trigger Box"),
+                    ('5', "Entity Screen", "Entity Screen"),
+                    ('6', "Entity Waypoint", "Entity Waypoint"),
+                    ('7', "Entity Light", "Entity Light"),
+                    ('8', "Entity Spotlight", "Entity Spotlight"),
+                    ('9', "Entity Sound Emitter", "Entity Sound Emitter"),
+                    ('10', "Entity Model", "Entity Model"),
+                    ('11', "Entity Item", "Entity Item"),
+                    ('12', "Entity Door", "Entity Door")]
+    elif game_title == GameTitleEnum.cb_uer_snoe:
+        enum_items_cache = [('0', "Exclude", "Object is excluded from export"),
+                    ('1', "Mesh", "Mesh"),
+                    ('3', "Collision", "Collision"),
+                    ('5', "Entity Screen", "Entity Screen"),
+                    ('6', "Entity Waypoint", "Entity Waypoint"),
+                    ('7', "Entity Light", "Entity Light"),
+                    ('8', "Entity Spotlight", "Entity Spotlight"),
+                    ('9', "Entity Sound Emitter", "Entity Sound Emitter"),
+                    ('10', "Entity Model", "Entity Model")]
+    elif game_title == GameTitleEnum.cb_uer_jabka:
+        enum_items_cache = [('0', "Exclude", "Object is excluded from export"),
+                    ('1', "Mesh", "Mesh"),
+                    ('3', "Collision", "Collision"),
+                    ('5', "Entity Screen", "Entity Screen"),
+                    ('6', "Entity Waypoint", "Entity Waypoint"),
+                    ('7', "Entity Light", "Entity Light"),
+                    ('8', "Entity Spotlight", "Entity Spotlight"),
+                    ('9', "Entity Sound Emitter", "Entity Sound Emitter"),
+                    ('10', "Entity Model", "Entity Model")]
+    elif game_title == GameTitleEnum.cb_ntf:
+        enum_items_cache = [('0', "Exclude", "Object is excluded from export"),
+                    ('1', "Mesh", "Mesh"),
+                    ('2', "Render", "Render"),
+                    ('3', "Collision", "Collision"),
+                    ('4', "Trigger Box", "Trigger Box"),
+                    ('5', "Entity Screen", "Entity Screen"),
+                    ('6', "Entity Waypoint", "Entity Waypoint"),
+                    ('7', "Entity Light", "Entity Light"),
+                    ('8', "Entity Spotlight", "Entity Spotlight"),
+                    ('9', "Entity Sound Emitter", "Entity Sound Emitter"),
+                    ('10', "Entity Model", "Entity Model"),
+                    ('13', "Entity Model No Collision", "Entity Model No Collision"),
+                    ('14', "Entity Fusebox", "Entity Fusebox"),
+                    ('15', "Entity Generator", "Entity Generator"),
+                    ('16', "Entity Button Generator", "Entity Button Generator"),
+                    ('17', "Entity Lever Generator", "Entity Lever Generator"),
+                    ('18', "Entity Particle Generator", "Entity Particle Generator"),
+                    ('19', "Entity MP Damage Boss Radius", "Entity MP Damage Boss Radius"),
+                    ('20', "Entity MP Player Spawn", "Entity MP Player Spawn"),
+                    ('21', "Entity MP Enemy Spawn", "Entity MP Enemy Spawn"),
+                    ('22', "Entity MP Item Spawn", "Entity MP Item Spawn"),
+                    ('23', "Entity Fluorescent Light", "Entity Fluorescent Light")]
+
+    return enum_items_cache
+
 class CBObjectPropertiesGroup(PropertyGroup):
     object_type: EnumProperty(
         name="Type",
         description="Set the classification for the CB object",
-        items = ( ('0', "Exclude", "Object is excluded from export"),
-                    ('1', "Mesh", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('2', "Render", "Object is valid for CB-S"),
-                    ('3', "Collision", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('4', "Trigger Box", "Object is valid for CB/CB-S"),
-                    ('5', "Entity Screen", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('6', "Entity Waypoint", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('7', "Entity Light", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('8', "Entity Spotlight", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('9', "Entity Sound Emitter", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('10', "Entity Model", "Object is valid for CB/CB-S/UER/UER2"),
-                    ('11', "Entity Item", "Object is valid for CB-S"),
-                    ('12', "Entity Door", "Object is valid for CB-S"),
-                    ('13', "Entity Model No Collision", "Object is valid for NTF"),
-                    ('14', "Entity Fusebox", "Object is valid for NTF"),
-                    ('15', "Entity Generator", "Object is valid for NTF"),
-                    ('16', "Entity Button Generator", "Object is valid for NTF"),
-                    ('17', "Entity Lever Generator", "Object is valid for NTF"),
-                    ('18', "Entity Particle Generator", "Object is valid for NTF"),
-                    ('19', "Entity MP Damage Boss Radius", "Object is valid for NTF"),
-                    ('20', "Entity MP Player Spawn", "Object is valid for NTF"),
-                    ('21', "Entity MP Enemy Spawn", "Object is valid for NTF"),
-                    ('22', "Entity MP Item Spawn", "Object is valid for NTF"),
-                    ('23', "Entity Fluorescent Light", "Object is valid for NTF")
-                )
+        items = get_object_enum_items
         )
 
     is_per_vertex: BoolProperty(
@@ -263,7 +386,7 @@ class CBObjectPropertiesGroup(PropertyGroup):
     sound_emitter_id_ui: EnumProperty(
         name="",
         description = "Id of the sound we are using",
-        items=get_enum_items,
+        items=get_sound_enum_items,
         get=get_sound_emitter_id,
         set=set_sound_emitter_id
     )
@@ -274,9 +397,40 @@ class CBObjectPropertiesGroup(PropertyGroup):
         default = False,
         )
 
-    fx: IntProperty(
-        name = "FX",
-        description = "???"
+    full_bright: BoolProperty(
+        name ="Full Bright",
+        description = "???",
+        default = False,
+        )
+
+    use_vertex_colors_instead_of_brush_color: BoolProperty(
+        name ="Use Vertex Colors Instead Of Brush Color",
+        description = "???",
+        default = False,
+        )
+
+    flatshaded: BoolProperty(
+        name ="Flatshaded",
+        description = "???",
+        default = False,
+        )
+
+    disable_fog: BoolProperty(
+        name ="Disable Fog",
+        description = "???",
+        default = False,
+        )
+
+    disable_backface_culling: BoolProperty(
+        name ="Disable Backface Culling",
+        description = "???",
+        default = False,
+        )
+
+    force_alpha_blending: BoolProperty(
+        name ="Force Alpha Blending",
+        description = "???",
+        default = False,
         )
 
     has_sprite: BoolProperty(
@@ -400,7 +554,7 @@ class CBObjectPropertiesGroup(PropertyGroup):
     generator_sfx_ui: EnumProperty(
         name="",
         description = "Id of the sound we are using",
-        items=get_enum_items,
+        items=get_sound_enum_items,
         get=get_generator_sfx,
         set=set_generator_sfx
     )
@@ -684,49 +838,49 @@ def render_trigger(context, layout, active_property):
     row.label(text='Trigger Group:')
     row.prop(active_property, "trigger_group", text='')
 
-def render_screen(context, layout, active_property):
+def render_screen(context, layout, active_property, game_title):
     box = layout.split()
     col = box.column(align=True)
-    row = col.row()
-    row.label(text='Is UER Variant:')
-    row.prop(active_property, "is_uer", text='')
-    if active_property.is_uer:
+    if game_title == GameTitleEnum.cb_uer_snoe or game_title == GameTitleEnum.cb_uer_jabka:
         row = col.row()
         row.label(text='Model Path:')
         row.prop(active_property, "model_path", text='')
+
     row = col.row()
     row.label(text='Texture Path:')
     row.prop(active_property, "texture_path", text='')
 
-def render_entity_light(context, layout, active_property, is_spotlight=False):
-    box = layout.split()
-    col = box.column(align=True)
-    row = col.row()
-    row.label(text='Is UER Variant:')
-    row.prop(active_property, "is_uer", text='')
-    if active_property.is_uer:
-        if not is_spotlight:
+def render_entity_light(context, layout, active_property, game_title, is_spotlight=False):
+    if game_title == GameTitleEnum.cb_uer_snoe or game_title == GameTitleEnum.cb_uer_jabka or game_title == GameTitleEnum.cb_salvage:
+        is_empty = False
+        if game_title == GameTitleEnum.cb_uer_snoe and is_spotlight:
+            is_empty = True
+
+        if not is_empty:
+            box = layout.split()
+            col = box.column(align=True)
+
+        if game_title == GameTitleEnum.cb_uer_snoe or game_title == GameTitleEnum.cb_uer_jabka:
+            if not is_spotlight:
+                row = col.row()
+                row.label(text='Is Light Fix:')
+                row.prop(active_property, "is_light_fix", text='')
+
+        if game_title == GameTitleEnum.cb_salvage:
             row = col.row()
-            row.label(text='Is Light Fix:')
-            row.prop(active_property, "is_light_fix", text='')
+            row.label(text='Has Sprite:')
+            row.prop(active_property, "has_sprite", text='')
 
-        row = col.row()
-        row.label(text='Has Sprite:')
-        row.prop(active_property, "has_sprite", text='')
-        row = col.row()
-        row.label(text='Sprite Scale:')
-        row.prop(active_property, "sprite_scale", text='')
-        row = col.row()
-        row.label(text='Scattering:')
-        row.prop(active_property, "scattering", text='')
-
-    elif is_spotlight:
-        row = col.row()
-        row.label(text='Has Sprite:')
-        row.prop(active_property, "has_sprite", text='')
-        row = col.row()
-        row.label(text='Sprite Scale:')
-        row.prop(active_property, "sprite_scale", text='')
+        elif game_title == GameTitleEnum.cb_uer_jabka:
+            row = col.row()
+            row.label(text='Has Sprite:')
+            row.prop(active_property, "has_sprite", text='')
+            row = col.row()
+            row.label(text='Sprite Scale:')
+            row.prop(active_property, "sprite_scale", text='')
+            row = col.row()
+            row.label(text='Scattering:')
+            row.prop(active_property, "scattering", text='')
 
 def render_sound_emitter(context, layout, active_property):
     box = layout.split()
@@ -741,18 +895,15 @@ def render_sound_emitter(context, layout, active_property):
         row.label(text='Sound Emitter ID Value:')
         row.prop(active_property, "sound_emitter_id")
 
-def render_entity_model(context, layout, active_property):
+def render_entity_model(context, layout, active_property, game_title):
     box = layout.split()
     col = box.column(align=True)
     row = col.row()
     row.operator("cb.update_ob")
     row = col.row()
-    row.label(text='Is UER Variant:')
-    row.prop(active_property, "is_uer", text='')
-    row = col.row()
     row.label(text='Model Path:')
     row.prop(active_property, "model_path", text='')
-    if active_property.is_uer:
+    if game_title == GameTitleEnum.cb_uer_snoe or game_title == GameTitleEnum.cb_uer_jabka or game_title == GameTitleEnum.cb_salvage:
         row = col.row()
         row.label(text='Texture Path:')
         row.prop(active_property, "texture_path", text='')
@@ -760,8 +911,23 @@ def render_entity_model(context, layout, active_property):
         row.label(text='Has Collision:')
         row.prop(active_property, "has_collision", text='')
         row = col.row()
-        row.label(text='FX:')
-        row.prop(active_property, "fx", text='')
+        row.label(text='Full Bright:')
+        row.prop(active_property, "full_bright", text='')
+        row = col.row()
+        row.label(text='Use Vertex Colors Instead Of Brush Color:')
+        row.prop(active_property, "use_vertex_colors_instead_of_brush_color", text='')
+        row = col.row()
+        row.label(text='Flatshaded:')
+        row.prop(active_property, "flatshaded", text='')
+        row = col.row()
+        row.label(text='Disable Fog:')
+        row.prop(active_property, "disable_fog", text='')
+        row = col.row()
+        row.label(text='Disable Backface Culling:')
+        row.prop(active_property, "disable_backface_culling", text='')
+        row = col.row()
+        row.label(text='Force Alpha Blending:')
+        row.prop(active_property, "force_alpha_blending", text='')
 
 def render_entity_item(context, layout, active_property):
     box = layout.split()
@@ -990,20 +1156,21 @@ class CB_ObjectProps(Panel):
         row.label(text='Object Type:')
         row.prop(ob_cb, "object_type", text='')
         object_type = ObjectType(int(ob_cb.object_type))
+        game_title = GameTitleEnum(int(context.scene.cb.game_title))
         if object_type == ObjectType.mesh:
             render_mesh(context, layout, ob_cb)
         elif object_type == ObjectType.trigger_box:
             render_trigger(context, layout, ob_cb)
         elif object_type == ObjectType.entity_screen:
-            render_screen(context, layout, ob_cb)
+            render_screen(context, layout, ob_cb, game_title)
         elif object_type == ObjectType.entity_light:
-            render_entity_light(context, layout, ob_cb)
+            render_entity_light(context, layout, ob_cb, game_title)
         elif object_type == ObjectType.entity_spotlight:
-            render_entity_light(context, layout, ob_cb, True)
+            render_entity_light(context, layout, ob_cb, game_title, True)
         elif object_type == ObjectType.entity_sound_emitter:
             render_sound_emitter(context, layout, ob_cb)
         elif object_type == ObjectType.entity_model:
-            render_entity_model(context, layout, ob_cb)
+            render_entity_model(context, layout, ob_cb, game_title)
         elif object_type == ObjectType.entity_item:
             render_entity_item(context, layout, ob_cb)
         elif object_type == ObjectType.entity_door:
@@ -1476,6 +1643,9 @@ classesscp = [
     B3DIMAGE_PT_SceneProps,
     CBRMAT_OT_CBShader,
     SCPCBAddonPrefs,
+    CB_SceneProps,
+    CB_ScenePropertiesGroup,
+    CB_GlobalSettings,
     CB_OT_UpdateOb,
     CB_OT_ConnectLightmaps,
     CB_OT_DisconnectLightmaps,
@@ -1500,6 +1670,7 @@ def register():
     bpy.types.NODE_MT_category_shader_shader.append(menu_func_cb_shaders)
     bpy.types.Object.cb = PointerProperty(type=CBObjectPropertiesGroup, name="RMESH Properties", description="Set properties for your rmesh object")
     bpy.types.Image.cb = PointerProperty(type=B3DImagePropertiesGroup)
+    bpy.types.Scene.cb = PointerProperty(type=CB_ScenePropertiesGroup, name="CB Scene Properties", description="Set properties for your scene")
 
     load_sound_emitters()
 
@@ -1512,6 +1683,7 @@ def unregister():
 
     del bpy.types.Object.cb
     del bpy.types.Image.cb
+    del bpy.types.Scene.cb
 
 if __name__ == '__main__':
     register()
