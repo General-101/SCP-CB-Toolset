@@ -1354,7 +1354,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     if entity_dict["entity_type"] == "light_fix":
                         object_mesh.cb.is_light_fix = True
 
-                if file_type == ImportFileType.rmesh_salvage:
+                if file_type == ImportFileType.rmesh_salvage and rmesh_dict["rmesh_version"] >= 2:
                     object_mesh.cb.has_sprite = bool(entity_dict["has_sprite"])
 
                 if file_type == ImportFileType.rmesh_uer2:
@@ -1388,7 +1388,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                 if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2:
                     object_mesh.cb.is_uer = True
 
-                if file_type == ImportFileType.rmesh_salvage:
+                if file_type == ImportFileType.rmesh_salvage and rmesh_dict["rmesh_version"] >= 2:
                     object_mesh.cb.has_sprite = bool(entity_dict["has_sprite"])
 
                 if file_type == ImportFileType.rmesh_uer2:
@@ -1456,7 +1456,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
 
                 model_path = get_file(entity_dict["model_name"], False, directory_path=local_prop_path)
                 texture_path = None
-                if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2 or ImportFileType.rmesh_salvage:
+                if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2 or (ImportFileType.rmesh_salvage and rmesh_dict["rmesh_version"] >= 2):
                     texture_path = get_file(entity_dict["texture_name"], True, False)
 
                 ob_data = entity_meshes.get(model_path)
@@ -1547,7 +1547,7 @@ def import_scene(context, filepath, file_type, fullbright_materials, use_light_r
                     scl = Vector(flip(entity_dict["scale"]))
                     object_mesh.matrix_world = Matrix.LocRotScale(loc, rot, scl)
 
-                if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2 or ImportFileType.rmesh_salvage:
+                if file_type == ImportFileType.rmesh_uer or file_type == ImportFileType.rmesh_uer2 or (ImportFileType.rmesh_salvage and rmesh_dict["rmesh_version"] >= 2):
                     object_mesh.cb.has_collision = bool(entity_dict["has_collision"])
                     entity_fx_flags = EntityFXFlags(entity_dict["fx"])
                     if EntityFXFlags.full_bright in entity_fx_flags:
