@@ -1299,10 +1299,13 @@ class ImportRMESH(Operator, ImportHelper):
         default = False,
         )
 
-    split_by_material: BoolProperty(
-        name ="Split by Material",
-        description = "Create a separate object for each texture",
-        default = False,
+    split_meshes_by: EnumProperty(
+        name="Split Mesh By",
+        description="How should we split up the mesh",
+        items=[ ('0', "None", "Keep the mesh as one whole object"),
+                ('1', "Material", "Split the mesh by the assigned materials"),
+                ('2', "Lightmap", "Split the mesh by the assigned lightmap"),
+            ]
         )
 
     use_light_radius: BoolProperty(
@@ -1343,7 +1346,7 @@ class ImportRMESH(Operator, ImportHelper):
 
         box = layout.box()
         box.label(text="Meshes", icon='MESH_DATA')
-        box.prop(self, "split_by_material")
+        box.prop(self, "split_meshes_by")
 
         box = layout.box()
         box.label(text="Materials", icon='MATERIAL')
@@ -1353,7 +1356,7 @@ class ImportRMESH(Operator, ImportHelper):
         from . import scene_rmesh
 
         return scene_rmesh.import_scene(context, Path(self.filepath), self.file_type, self.fullbright_materials, self.use_light_radius, self.use_game_rules,
-                                        self.split_by_material, self.import_meshes, self.import_collisions, self.import_trigger_boxes, self.import_entities, self.report)
+                                        self.split_meshes_by, self.import_meshes, self.import_collisions, self.import_trigger_boxes, self.import_entities, self.report)
 
     if (4, 1, 0) <= bpy.app.version:
         def invoke(self, context, event):
