@@ -204,10 +204,13 @@ def import_fcurve_data(room_scale, ob, strips, bone_name, keyframe_dict, node_tr
                 fcurve_map[group_name][path][index] = fcurve
 
         section_found = False
+        strip_start = strip.frame_start
+        strip_end = strip.frame_end
         for keyframe_section in keyframe_dict:
             for frame_data in keyframe_section:
                 frame_number = frame_data["frame"]
-                if action.frame_start <= frame_number <= action.frame_end:
+                if strip_start <= frame_number <= strip_end:
+                    frame_number = (frame_number - strip_start) + 1
                     section_found = True
                     position_field = frame_data.get("position")
                     rotation_field = frame_data.get("rotation")
@@ -590,12 +593,16 @@ def import_node_recursive(context, filepath, data, node, material_list, room_sca
 
                         sequences_dict = child_node["sequences"]
                         for sequence_element in sequences_dict:
-                            action = bpy.data.actions.new(name="%s_%s" % (armature.name, sequence_element["name"]))
-                            action.use_frame_range = True
-                            action.frame_start = sequence_element["start"]
-                            action.frame_end = sequence_element["end"]
+                            sequence_length = int(sequence_element["end"] - sequence_element["start"]) + 1
+                            if sequence_length < 1:
+                                sequence_length = 1
 
-                            strip = track.strips.new(name=action.name, start=int(action.frame_start), action=action)
+                            action = bpy.data.actions.new(name=sequence_element["name"])
+                            action.use_frame_range = True
+                            action.frame_start = 1
+                            action.frame_end = sequence_length
+
+                            strip = track.strips.new(name=action.name, start=int(sequence_element["start"]), action=action)
                             if sequence_element["start"] == sequence_element["end"]:
                                 strip.frame_end = sequence_element["start"] + 0.1
                                 #strip.action_frame_end = sequence_element["start"] - 0.9
