@@ -918,6 +918,7 @@ def get_mesh(set_gamma, b3d_data, ob, depsgraph, room_scale, armature_ob=None):
                     diffuse_node = get_linked_node(node_group, "Diffuse Map", "TEX_IMAGE")
 
                     mat_r, mat_g, mat_b, mat_a = node_group.inputs["Diffuse Overlay"].default_value
+                    mat_a = node_group.inputs["Diffuse Overlay Alpha"].default_value
                     mat_shine = node_group.inputs["Shine"].default_value
                     mat_blend_type = int(node_group.inputs["Blend Type"].default_value)
                     mat_fx = 0
@@ -1427,7 +1428,10 @@ def set_material_properties(b3d_node, material_dict):
         b3d_node.inputs["Use Shine"].default_value = True
         b3d_node.inputs["Blend Type"].default_value = material_dict["blend"]
         b3d_node.inputs["Shine"].default_value = material_dict["shine"]
-        b3d_node.inputs["Diffuse Overlay"].default_value = material_dict["rgba"]
+
+        r, g, b, a = material_dict["rgba"]
+        b3d_node.inputs["Diffuse Overlay"].default_value = (r, g, b, 1)
+        b3d_node.inputs["Diffuse Overlay Alpha"].default_value = a
 
 def get_image_properties(img, texture_dict):
     img_b3d = img.cb
